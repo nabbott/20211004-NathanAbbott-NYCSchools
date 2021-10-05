@@ -19,9 +19,6 @@
 		8B5DA6BA2709350F0096C07A /* DetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B5DA6B92709350F0096C07A /* DetailViewController.swift */; };
 		8B5DA6DD27095CBF0096C07A /* JSONParseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B5DA6DC27095CBF0096C07A /* JSONParseTests.swift */; };
 		8B5DA6E827095DF00096C07A /* ParseUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B5DA6E727095DF00096C07A /* ParseUtil.swift */; };
-		8B5DA72F270A3B8D0096C07A /* SAT.json in Resources */ = {isa = PBXBuildFile; fileRef = 8B5DA716270A1E640096C07A /* SAT.json */; };
-		8B5DA730270A3B8D0096C07A /* Address.json in Resources */ = {isa = PBXBuildFile; fileRef = 8B5DA715270A1E5C0096C07A /* Address.json */; };
-		8B5DA731270A3B8D0096C07A /* School.json in Resources */ = {isa = PBXBuildFile; fileRef = 8B5DA6C7270941C40096C07A /* School.json */; };
 		8B9AA8AD270AA44100874298 /* WebsiteViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B9AA8AC270AA44100874298 /* WebsiteViewController.swift */; };
 		8B9AA8BC270AAB4000874298 /* HSlTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B5DA69227091C700096C07A /* HSlTableViewCell.swift */; };
 		8B9AA8BD270AAB4000874298 /* DirectoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1585F12707E232007EE576 /* DirectoryViewController.swift */; };
@@ -35,6 +32,10 @@
 		8B9AA8C9270AAB4000874298 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8B1585F92707E23F007EE576 /* Assets.xcassets */; };
 		8B9AA8CA270AAB4000874298 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8B1585F32707E232007EE576 /* Main.storyboard */; };
 		8B9AA8FC270AB5DC00874298 /* LocationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B9AA8F3270AB22F00874298 /* LocationViewController.swift */; };
+		8BE526F4270D12E1008832C6 /* CorruptedFile.json in Resources */ = {isa = PBXBuildFile; fileRef = 8BE526E4270D11C6008832C6 /* CorruptedFile.json */; };
+		8BE526F5270D12E1008832C6 /* Address.json in Resources */ = {isa = PBXBuildFile; fileRef = 8B5DA715270A1E5C0096C07A /* Address.json */; };
+		8BE526F6270D12E1008832C6 /* SAT.json in Resources */ = {isa = PBXBuildFile; fileRef = 8B5DA716270A1E640096C07A /* SAT.json */; };
+		8BE526F7270D12E1008832C6 /* School.json in Resources */ = {isa = PBXBuildFile; fileRef = 8B5DA6C7270941C40096C07A /* School.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +73,7 @@
 		8B9AA8E5270AAE7000874298 /* NYCSchools.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NYCSchools.entitlements; sourceTree = "<group>"; };
 		8B9AA8F3270AB22F00874298 /* LocationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationViewController.swift; sourceTree = "<group>"; };
 		8B9AA937270AE38300874298 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		8BE526E4270D11C6008832C6 /* CorruptedFile.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = CorruptedFile.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -141,8 +143,9 @@
 		8B1586062707E23F007EE576 /* NYCSchoolsTests */ = {
 			isa = PBXGroup;
 			children = (
-				8B5DA716270A1E640096C07A /* SAT.json */,
+				8BE526E4270D11C6008832C6 /* CorruptedFile.json */,
 				8B5DA715270A1E5C0096C07A /* Address.json */,
+				8B5DA716270A1E640096C07A /* SAT.json */,
 				8B5DA6C7270941C40096C07A /* School.json */,
 				8B5DA6DC27095CBF0096C07A /* JSONParseTests.swift */,
 				8B1586092707E23F007EE576 /* Info.plist */,
@@ -311,9 +314,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8B5DA72F270A3B8D0096C07A /* SAT.json in Resources */,
-				8B5DA730270A3B8D0096C07A /* Address.json in Resources */,
-				8B5DA731270A3B8D0096C07A /* School.json in Resources */,
+				8BE526F4270D12E1008832C6 /* CorruptedFile.json in Resources */,
+				8BE526F5270D12E1008832C6 /* Address.json in Resources */,
+				8BE526F6270D12E1008832C6 /* SAT.json in Resources */,
+				8BE526F7270D12E1008832C6 /* School.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -563,14 +567,14 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = YTMVKPZGGB;
-				INFOPLIST_FILE = JPMCPrototypeTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.4;
+				INFOPLIST_FILE = NYCSchoolsTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.sundaylogic.JPMCPrototypeTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sundaylogic.NYCSchoolsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -585,14 +589,14 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = YTMVKPZGGB;
-				INFOPLIST_FILE = JPMCPrototypeTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.4;
+				INFOPLIST_FILE = NYCSchoolsTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.sundaylogic.JPMCPrototypeTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sundaylogic.NYCSchoolsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
