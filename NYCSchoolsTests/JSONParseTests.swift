@@ -7,49 +7,36 @@
 
 import XCTest
 import CoreData
-@testable import JPMCPrototype
+@testable import NYCSchools
+
+fileprivate
+func loadJSONFile(fileName fn:String)->Array<Dictionary<String,String>>{
+    let bundle=Bundle(for: JSONParseTests.self)
+    let path = bundle.path(forResource: fn, ofType: "json")!
+    let fileHandle=FileHandle.init(forReadingAtPath: path)!
+    defer {
+        try! fileHandle.close()
+    }
+    
+    let unserialized=try! JSONSerialization.jsonObject(with: fileHandle.availableData, options: .allowFragments)
+    return (unserialized as? Array<Dictionary<String, String>>)!
+}
 
 class JSONParseTests: XCTestCase {
     lazy var schoolJSON:Array<Dictionary<String,String>>={
-        let bundle=Bundle(for: JSONParseTests.self)
-        let path = bundle.path(forResource: "School", ofType: "json")!
-        let fileHandle=FileHandle.init(forReadingAtPath: path)!
-        defer {
-            try! fileHandle.close()
-        }
-        
-        let unserialized=try! JSONSerialization.jsonObject(with: fileHandle.availableData, options: .allowFragments)
-        return (unserialized as? Array<Dictionary<String, String>>)!
+        return loadJSONFile(fileName: "School")
     }()
     
     lazy var addressJSON:Array<Dictionary<String,String>>={
-        let bundle=Bundle(for: JSONParseTests.self)
-        let path = bundle.path(forResource: "Address", ofType: "json")!
-        let fileHandle=FileHandle.init(forReadingAtPath: path)!
-        defer {
-            try! fileHandle.close()
-        }
-
-        
-        let unserialized=try! JSONSerialization.jsonObject(with: fileHandle.availableData, options: .allowFragments)
-        return (unserialized as? Array<Dictionary<String, String>>)!
+        return loadJSONFile(fileName: "Address")
     }()
     
     lazy var satJSON:Array<Dictionary<String,String>>={
-        let bundle=Bundle(for: JSONParseTests.self)
-        let path = bundle.path(forResource: "SAT", ofType: "json")!
-        let fileHandle=FileHandle.init(forReadingAtPath: path)!
-        defer {
-            try! fileHandle.close()
-        }
-
-        
-        let unserialized=try! JSONSerialization.jsonObject(with: fileHandle.availableData, options: .allowFragments)
-        return (unserialized as? Array<Dictionary<String, String>>)!
+        return loadJSONFile(fileName: "SAT")
     }()
     
     lazy var psc:NSPersistentContainer = {
-        guard let modelURL = Bundle.main.url(forResource: "JPMCPrototype", withExtension: "momd") else {
+        guard let modelURL = Bundle.main.url(forResource: "NYCSchools", withExtension: "momd") else {
             fatalError("Failed to find data model")
         }
         guard let mom = NSManagedObjectModel(contentsOf: modelURL) else {
