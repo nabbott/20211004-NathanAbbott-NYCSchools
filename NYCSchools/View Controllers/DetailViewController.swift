@@ -37,12 +37,24 @@ class DetailViewController:UIViewController {
     func setupToolbar(){
         self.setToolbarItems({
             var items:[UIBarButtonItem]=[]
+
+            
             if let _ = highschool?.website {
-                items.append(UIBarButtonItem(title: "Website", style: .plain, target: self, action: #selector(showWebsite(sender:))))
+                if #available(iOS 13.0, *) {
+                    let bbi=UIBarButtonItem(image: UIImage(systemName: "globe"), style: .plain, target: self, action: #selector(showWebsite(sender:)))
+                    items.append(bbi)
+                } else {
+                    items.append(UIBarButtonItem(title: "Website", style: .plain, target: self, action: #selector(showWebsite(sender:))))
+                }
             }
             
             if let addr=highschool?.address, 0 != addr.latitude && 0 != addr.longitude {
-                items.append(UIBarButtonItem(title: "Location", style: .plain, target: self, action: #selector(showLocation(sender:))))
+                if #available(iOS 13.0, *) {
+                    let bbi=UIBarButtonItem(image: UIImage(systemName: "map"), style: .plain, target: self, action: #selector(showLocation(sender:)))
+                    items.append(bbi)
+                } else {
+                    items.append(UIBarButtonItem(title: "Location", style: .plain, target: self, action: #selector(showLocation(sender:))))
+                }
             }
             
             return items
