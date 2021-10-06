@@ -47,8 +47,8 @@ class DirectoryViewController: UIViewController {
         NSSortDescriptor(key: "schoolName", ascending: false)
     ]
     
-    lazy var highSchoolsFR:NSFetchRequest<NSDictionary> = {
-        let request:NSFetchRequest<NSDictionary>=NSFetchRequest(entityName: "HighSchool"),
+    lazy var highSchoolsFR:NSFetchRequest<HighSchool> = {
+        let request:NSFetchRequest<HighSchool>=NSFetchRequest(entityName: "HighSchool"),
         oid:NSExpressionDescription={
             let expr=NSExpressionDescription()
             expr.expressionResultType=NSAttributeType.objectIDAttributeType
@@ -57,18 +57,17 @@ class DirectoryViewController: UIViewController {
             return expr
         }()
         
-        request.resultType = .dictionaryResultType
+        request.resultType = .managedObjectResultType
         request.sortDescriptors=ascendingSort
-        request.returnsObjectsAsFaults=false
-        request.propertiesToFetch=["schoolName","address.borough",oid]
+        request.propertiesToFetch=["schoolName"]
         
         return request
     }()
     
-    lazy var data:NSFetchedResultsController<NSDictionary>={
+    lazy var data:NSFetchedResultsController<HighSchool>={
         let moc:NSManagedObjectContext=(UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
-        let fetchRequest:NSFetchRequest<NSDictionary>=highSchoolsFR
-        let frc:NSFetchedResultsController<NSDictionary>=NSFetchedResultsController(
+        let fetchRequest:NSFetchRequest<HighSchool>=highSchoolsFR
+        let frc:NSFetchedResultsController<HighSchool>=NSFetchedResultsController(
             fetchRequest: fetchRequest,
             managedObjectContext: moc,
             sectionNameKeyPath: "address.borough",
@@ -178,7 +177,7 @@ extension DirectoryViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell=tableView.dequeueReusableCell(withIdentifier:"HSName", for:indexPath) as! HSTableCellView 
-        cell.name.text = (self.data.object(at: indexPath)["schoolName"] as? String) ?? "Not Available"
+        cell.name.text = self.data.object(at: indexPath).schoolName ?? "Not Available"
         
         return cell
         
@@ -199,9 +198,7 @@ extension DirectoryViewController {
                 return
             }
             
-            guard let oid=self.data.object(at: selectedIndex)["objectID"] as? NSManagedObjectID else {
-                return
-            }
+            let oid=self.data.object(at: selectedIndex).objectID
             
             if let destination=segue.destination as? DetailViewController {
                 let moc=(UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -210,8 +207,9 @@ extension DirectoryViewController {
             }
         case "showLocations":
             if let destination=segue.destination as? LocationViewController {
-                let fr=NSFetchRequest<HighSchool>(entityName: "HighSchool")
-                fr.resultType = .managedObjectResultType
+                let fr=highSchoolsFR.copy() as! NSFetchRequest<HighSchool>
+                fr.relationshipKeyPathsForPrefetching=["address"]
+                
                 let results=try! (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext.fetch(fr)
                 destination.highSchools.append(contentsOf: results)
             }
