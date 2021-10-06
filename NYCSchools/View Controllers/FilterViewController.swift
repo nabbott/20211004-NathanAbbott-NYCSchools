@@ -34,7 +34,10 @@ class FilterViewController:UIViewController {
         } else {
             targetVC.sortByFilterBy=SortByFilterBy(sortAscending: isAsc, filterByBorough: borough)
         }
-        
+    }
+    
+    @IBAction func cancel(sender:UIControl){
+        dismiss(animated: true)
     }
 }
 
