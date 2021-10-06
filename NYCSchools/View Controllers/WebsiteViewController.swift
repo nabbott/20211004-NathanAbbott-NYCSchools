@@ -33,5 +33,13 @@ class WebsiteViewController: UIViewController {
         let req = URLRequest(url: url!)
         webkitView.load(req)
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        navigationController?.setToolbarHidden(true, animated: animated)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        navigationController?.setToolbarHidden(false, animated: animated)
+    }
 }
 

@@ -60,11 +60,19 @@ class DirectoryViewController: UIViewController {
                 items.append(UIBarButtonItem(title: "Reload", style: .plain, target: self, action: #selector(deleteAndImportHSData(sender:))))
             }
             #endif
+
             if #available(iOS 13.0, *) {
                 let bbi=UIBarButtonItem(image: UIImage(systemName: "map"), style: .plain, target: self, action: #selector(showMap(sender:)))
                 items.append(bbi)
             } else {
                 items.append(UIBarButtonItem(title: "Map", style: .plain, target: self, action: #selector(showMap(sender:))))
+            }
+            
+            if #available(iOS 13.0, *) {
+                let bbi=UIBarButtonItem(image: UIImage(systemName: "line.horizontal.3.decrease.circle"), style: .plain, target: self, action: #selector(showMap(sender:)))
+                items.append(bbi)
+            } else {
+                items.append(UIBarButtonItem(title: "Filter", style: .plain, target: self, action: #selector(showMap(sender:))))
             }
             
             return items

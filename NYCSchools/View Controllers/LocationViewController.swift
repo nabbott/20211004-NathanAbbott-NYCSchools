@@ -43,6 +43,14 @@ class LocationViewController: UIViewController {
         }
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        navigationController?.setToolbarHidden(true, animated: animated)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        navigationController?.setToolbarHidden(false, animated: animated)
+    }
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         guard let mapView=sender as? MKMapView else {return}
         guard let selectedAnnotation=mapView.selectedAnnotations.first as? HSLocation else {return}
