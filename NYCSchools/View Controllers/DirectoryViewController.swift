@@ -51,15 +51,18 @@ class DirectoryViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         self.setToolbarItems({
-            return [
-                UIBarButtonItem(title: "Reload", style: .plain, target: self, action: #selector(deleteAndImportHSData(sender:))),
-                UIBarButtonItem(title: "Map", style: .plain, target: self, action: #selector(showMap(sender:)))
-            ]
+            var items:[UIBarButtonItem]=[]
+            #if DEBUG
+            items.append(UIBarButtonItem(title: "Reload", style: .plain, target: self, action: #selector(deleteAndImportHSData(sender:))))
+            #endif
+            
+            items.append(UIBarButtonItem(title: "Map", style: .plain, target: self, action: #selector(showMap(sender:))))
+            return items
         }(), animated: false)
         
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(reloadData(sender:)),
-                                               name: .NSManagedObjectContextDidSave,
+                                               name: .NSManagedObjectContextObjectsDidChange,
                                                object: (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext)
         
         self.performFetch()

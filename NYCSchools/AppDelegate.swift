@@ -82,46 +82,95 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     //MARK: - Data import routines
     func batchDelete(ctx:NSManagedObjectContext) {
-        ctx.performAndWait {[moc=ctx] () in
-            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "HighSchool")
+        let entities=["HighSchool","SATResult","Address"]
+        entities.forEach { entity in
+            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entity)
             let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-            
+            batchDeleteRequest.resultType = .resultTypeCount
             do {
-                try moc.execute(batchDeleteRequest)
+                let result=try ctx.execute(batchDeleteRequest)
+                if let rowsDeleted=(result as! NSBatchDeleteResult).result as? NSNumber {
+                    print("\(rowsDeleted) \(entity) rows deleted")
+                }
             } catch {
                 os_log(.error, "%@", "\(error)")
             }
         }
-        
     }
     
-    func importSchools(ctx:NSManagedObjectContext){
-        guard let data=NSDataAsset(name: "2017DOEHighSchoolDirectory")?.data else {
-            os_log(.debug, "%@", "Unable to load the hs data file")
-            return
+    func importData(fileAndHandler:[String:(HSDataImporter)->(Data,Bool) throws ->()], ctx:NSManagedObjectContext){
+        fileAndHandler.forEach {
+            guard let data=NSDataAsset(name: $0.key)?.data else {
+                os_log(.debug, "%@", "Unable to load the hs data file")
+                return
+            }
+            
+            let importer=HSDataImporter(moc: ctx, includeChildEntities: true)
+            do {
+                try $0.value(importer)(data,true)
+            } catch {
+                os_log(.error, "%@", "\(error)")
+            }
         }
-        
-        let importer=HSDataImporter(moc: ctx, includeChildEntities: true)
-        importer.importSchools(json: data)
     }
     
-    func importSATResults(ctx:NSManagedObjectContext){
-        guard let data=NSDataAsset(name: "2012SATResults")?.data else {
-            os_log(.debug, "%@", "Unable to load the sat results data file")
-            return
-        }
-        
-        let importer=HSDataImporter(moc: ctx, includeChildEntities: true)
-        importer.importSATResults(json: data)
+    
+    @objc
+    func mergeContextsAfterReload(sender:Notification){
+        persistentContainer.viewContext.mergeChanges(fromContextDidSave: sender)
+        NotificationCenter.default.removeObserver(self, name: .NSManagedObjectContextDidSave, object: sender.userInfo?["managedObjectContext"])
     }
     
     func clearAndReloadData(){
-        let ctx=self.persistentContainer.viewContext
-
-        batchDelete(ctx:ctx)
-        importSchools(ctx: ctx)
-        importSATResults(ctx: ctx)
-        self.saveContext()
+        let bgCtx=persistentContainer.newBackgroundContext()
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(mergeContextsAfterReload(sender:)),
+                                               name: .NSManagedObjectContextDidSave,
+                                               object: bgCtx)
+        bgCtx.performAndWait {
+            self.batchDelete(ctx:bgCtx)
+            self.importData(fileAndHandler:
+                                [
+                                    "2017DOEHighSchoolDirectory":HSDataImporter.importSchools,
+                                    "2012SATResults":HSDataImporter.importSATResults
+                                ],ctx:bgCtx)
+            
+            do {
+                if bgCtx.hasChanges {
+                    try bgCtx.save()
+                }
+            } catch {
+                let nserror = error as NSError
+                os_log(.error, "%@", "Unresolved error \(nserror), \(nserror.userInfo)")
+            }
+        }
     }
 }
 
+//func importSchools(ctx:NSManagedObjectContext){
+//    guard let data=NSDataAsset(name: "2017DOEHighSchoolDirectory")?.data else {
+//        os_log(.debug, "%@", "Unable to load the hs data file")
+//        return
+//    }
+//
+//    let importer=HSDataImporter(moc: ctx, includeChildEntities: true)
+//    do {
+//        try importer.importSchools(json: data)
+//    } catch {
+//        os_log(.error, "%@", "\(error)")
+//    }
+//}
+//
+//func importSATResults(ctx:NSManagedObjectContext){
+//    guard let data=NSDataAsset(name: "2012SATResults")?.data else {
+//        os_log(.debug, "%@", "Unable to load the sat results data file")
+//        return
+//    }
+//    
+//    let importer=HSDataImporter(moc: ctx, includeChildEntities: true)
+//    do {
+//        try importer.importSATResults(json: data)
+//    } catch {
+//        os_log(.error, "%@", "\(error)")
+//    }
+//}

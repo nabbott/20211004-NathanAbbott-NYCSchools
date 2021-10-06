@@ -252,12 +252,34 @@ class HSDataImporter {
             })
             do {
                 try moc.execute(req)
+                let count=try moc.count(for:NSFetchRequest<HighSchool>(entityName: "HighSchool"))
+                os_log(.debug,"%@","Inserted \(count) school records")
+                
+                batchInsertAddress(schoolData: schoolData)
             } catch {
                 os_log(.error, "%@", "\(error)")
             }
         } else {
             schoolData.forEach { school in
                 insertHS(schoolData: school)
+            }
+        }
+    }
+    
+    func batchInsertAddress(schoolData:Array<Dictionary<String, String>>){
+        let fReq:NSFetchRequest<HighSchool>=NSFetchRequest()
+        fReq.entity=NSEntityDescription.entity(forEntityName: "HighSchool", in: moc)
+        fReq.returnsObjectsAsFaults=false
+        
+        schoolData.forEach { school in
+            guard let dbn=stringToString(school["dbn"]) else {
+                os_log(.debug,"%@", "Could not parse dbn")
+                return
+            }
+            
+            fReq.predicate=NSPredicate(format: "dbn=%@", dbn)
+            if let hs=(try? moc.persistentStoreCoordinator?.execute(fReq, with: moc) as? Array<HighSchool>)?.first {
+                hs.address=insertAddress(schoolData: school)
             }
         }
     }
@@ -277,11 +299,10 @@ class HSDataImporter {
         return satResults
     }
 
-    
     func batchInsertSATResults(satData:Array<Dictionary<String, String>>) {
         if #available(iOS 14.0, *) {
             var i=0
-            let req=NSBatchInsertRequest(entityName: "SATResult", managedObjectHandler: {[self, satData] satResult in
+            let req=NSBatchInsertRequest(entityName: "SATResult", managedObjectHandler: {[satData] satResult in
                 let satResults:SATResult=satResult as! SATResult
                 populateSAT(satData: satData[i], sat: satResults)
                 
