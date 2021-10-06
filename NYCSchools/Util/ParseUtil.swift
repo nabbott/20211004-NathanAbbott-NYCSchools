@@ -9,6 +9,11 @@ import Foundation
 import CoreData
 import OSLog
 
+enum ImportErrors:Error {
+    case missingFile
+    case jsonParseFailed
+}
+
 //MARK: - Utility functions to handle data type conversions, cleaning, and defaults
 internal
 func log(_ msg:String, logType:OSLogType = .debug){
@@ -93,6 +98,91 @@ func stringToInt(_ str:String?)->Int16 {
     return 0
 }
 
+internal
+func populateAddress(schoolData:Dictionary<String, String>, address:Address){
+    address.bbl=stringToString(schoolData["bbl"])
+    address.bin=stringToString(schoolData["bin"])
+    address.zip=stringToString(schoolData["zip"])
+    address.bus=stringToString(schoolData["bus"])
+    address.nta=stringToString(schoolData["nta"])
+    address.boro=stringToString(schoolData["boro"])
+    address.city=stringToString(schoolData["city"])
+    address.subway=stringToString(schoolData["subway"])
+    address.borough=stringToString(schoolData["borough"])
+    address.location=stringToString(schoolData["location"])
+    address.stateCode=stringToString(schoolData["state_code"])
+    address.campusName=stringToString(schoolData["campus_name"])
+    address.neighborhood=stringToString(schoolData["neighborhood"])
+    address.buildingCode=stringToString(schoolData["building_code"])
+    address.primaryAddressLine1=stringToString(schoolData["primary_address_line_1"])
+    
+    //Numeric types
+    address.latitude=stringToDouble(schoolData["latitude"])
+    address.longitude=stringToDouble(schoolData["longitude"])
+    
+    address.censusTract=stringToInt(schoolData["census_tract"])
+    address.communityBoard=stringToInt(schoolData["community_board"])
+    address.councilDistrict=stringToInt(schoolData["council_district"])
+}
+
+internal
+func populateHighSchool(schoolData:Dictionary<String, String>, school:HighSchool){
+    school.dbn=stringToString(schoolData["dbn"])
+    school.website=stringToString(schoolData["website"])
+    school.endTime=stringToString(schoolData["end_time"])
+    school.startTime=stringToString(schoolData["start_time"])
+    school.faxNumber=stringToString(schoolData["fax_number"])
+    school.grades2018=stringToString(schoolData["grades2018"])
+    school.schoolName=stringToString(schoolData["school_name"])
+    school.finalGrades=stringToString(schoolData["finalgrades"])
+    school.schoolEmail=stringToString(schoolData["school_email"])
+    school.ellPrograms=stringToString(schoolData["ell_programs"])
+    school.phoneNumber=stringToString(schoolData["phone_number"])
+    school.schoolSports=stringToString(schoolData["school_sports"])
+    school.additionalInfo=stringToString(schoolData["addtl_info1"])
+    school.geoEligibility=stringToString(schoolData["geoeligibility"])
+    school.psalSportsBoys=stringToString(schoolData["psal_sports_boys"])
+    school.psalSportsCoed=stringToString(schoolData["psal_sports_coed"])
+    school.languageClasses=stringToString(schoolData["language_classes"])
+    school.psalSportsGirls=stringToString(schoolData["psal_sports_girls"])
+    school.overviewParagraph=stringToString(schoolData["overview_paragraph"])
+    school.diplomaEndorsements=stringToString(schoolData["diplomaendorsements"])
+    school.advancedPlacementCourses=stringToString(schoolData["advancedplacement_courses"])
+    school.extracurricularActivities=stringToString(schoolData["extracurricular_activities"])
+    
+    //Numeric types
+    school.totalStudents=stringToInt(schoolData["total_students"])
+    
+    school.pctStuSafe=stringToFloat(schoolData["pct_stu_safe"])
+    school.attendanceRate=stringToFloat(schoolData["attendance_rate"])
+    school.graduationRate=stringToFloat(schoolData["graduation_rate"])
+    school.collegeCareerRate=stringToFloat(schoolData["college_career_rate"])
+    school.pctStuEnoughVariety=stringToFloat(schoolData["pct_stu_enough_variety"])
+    
+    //Flags
+    school.boys=stringToBool(schoolData["boys"])
+    school.pbat=stringToBool(schoolData["pbat"])
+    school.girls=stringToBool(schoolData["girls"])
+    school.ptech=stringToBool(schoolData["ptech"])
+    school.transfer=stringToBool(schoolData["specialized"])
+    school.specialized=stringToBool(schoolData["specialized"])
+    school.sharedSpace=stringToBool(schoolData["shared_space"])
+    school.international=stringToBool(schoolData["international"])
+    school.school10thSeats=stringToBool(schoolData["school_10th_seats"])
+    school.schoolAccessibilityDescription=stringToBool(schoolData["school_accessibility_description"])
+}
+
+internal
+func populateSAT(satData:Dictionary<String, String>, sat:SATResult){
+    sat.dbn=stringToString(satData["dbn"])
+    sat.schoolName=stringToString(satData["school_name"])
+    
+    sat.numOfSatTestTakers=stringToInt(satData["num_of_sat_test_takers"])
+    sat.satCriticalReadingAvgScore=stringToInt(satData["sat_critical_reading_avg_score"])
+    sat.satMathAvgScore=stringToInt(satData["sat_math_avg_score"])
+    sat.satWritingAvgScore=stringToInt(satData["sat_writing_avg_score"])
+}
+
 //MARK: - The data import engine. Parses a data object containing JSON.
 class HSDataImporter {
     private let moc:NSManagedObjectContext
@@ -107,115 +197,32 @@ class HSDataImporter {
         self.includeChildEntities=includeChildEntities
     }
     
-    func importSchools(json:Data, batchLoad:Bool=false){
-        let unserialized=try! JSONSerialization.jsonObject(with: json, options: .allowFragments)
-        let schools:Array<Dictionary<String, String>>=unserialized as! Array<Dictionary<String, String>>
+    func importSchools(json:Data, batchLoad:Bool=false) throws {
+        let rawJSON=try JSONSerialization.jsonObject(with: json, options: .allowFragments)
+        let records:Array<Dictionary<String, String>>=rawJSON as! Array<Dictionary<String, String>>
         
-        schools.forEach { school in
-            if batchLoad {
-                batchInsertHS(schoolData: school)
-            } else {
+        if batchLoad {
+            batchInsertHS(schoolData: records)
+        } else {
+            records.forEach { school in
                 insertHS(schoolData: school)
             }
         }
     }
     
-    func importSATResults(json:Data, batchLoad:Bool=false){
-        let unserialized=try! JSONSerialization.jsonObject(with: json, options: .allowFragments)
-        let data:Array<Dictionary<String, String>>=unserialized as! Array<Dictionary<String, String>>
-        
-        data.forEach { satResult in
-            if batchLoad {
-                batchInsertSATResults(satData: satResult)
-            } else {
+    func importSATResults(json:Data, batchLoad:Bool=false) throws {
+        let rawJSON=try JSONSerialization.jsonObject(with: json, options: .allowFragments)
+        let records:Array<Dictionary<String, String>>=rawJSON as! Array<Dictionary<String, String>>
+        if batchLoad {
+            batchInsertSATResults(satData: records)
+        } else {
+            records.forEach { satResult in
                 insertSATResult(satData: satResult)
             }
         }
+        
     }
-
-    
-    func populateAddress(schoolData:Dictionary<String, String>, address:Address){
-        address.bbl=stringToString(schoolData["bbl"])
-        address.bin=stringToString(schoolData["bin"])
-        address.zip=stringToString(schoolData["zip"])
-        address.bus=stringToString(schoolData["bus"])
-        address.nta=stringToString(schoolData["nta"])
-        address.boro=stringToString(schoolData["boro"])
-        address.city=stringToString(schoolData["city"])
-        address.subway=stringToString(schoolData["subway"])
-        address.borough=stringToString(schoolData["borough"])
-        address.location=stringToString(schoolData["location"])
-        address.stateCode=stringToString(schoolData["state_code"])
-        address.campusName=stringToString(schoolData["campus_name"])
-        address.neighborhood=stringToString(schoolData["neighborhood"])
-        address.buildingCode=stringToString(schoolData["building_code"])
-        address.primaryAddressLine1=stringToString(schoolData["primary_address_line_1"])
         
-        //Numeric types
-        address.latitude=stringToDouble(schoolData["latitude"])
-        address.longitude=stringToDouble(schoolData["longitude"])
-        
-        address.censusTract=stringToInt(schoolData["census_tract"])
-        address.communityBoard=stringToInt(schoolData["community_board"])
-        address.councilDistrict=stringToInt(schoolData["council_district"])
-    }
-    
-    func populateHighSchool(schoolData:Dictionary<String, String>, school:HighSchool){
-        school.dbn=stringToString(schoolData["dbn"])
-        school.website=stringToString(schoolData["website"])
-        school.endTime=stringToString(schoolData["end_time"])
-        school.startTime=stringToString(schoolData["start_time"])
-        school.faxNumber=stringToString(schoolData["fax_number"])
-        school.grades2018=stringToString(schoolData["grades2018"])
-        school.schoolName=stringToString(schoolData["school_name"])
-        school.finalGrades=stringToString(schoolData["finalgrades"])
-        school.schoolEmail=stringToString(schoolData["school_email"])
-        school.ellPrograms=stringToString(schoolData["ell_programs"])
-        school.phoneNumber=stringToString(schoolData["phone_number"])
-        school.schoolSports=stringToString(schoolData["school_sports"])
-        school.additionalInfo=stringToString(schoolData["addtl_info1"])
-        school.geoEligibility=stringToString(schoolData["geoeligibility"])
-        school.psalSportsBoys=stringToString(schoolData["psal_sports_boys"])
-        school.psalSportsCoed=stringToString(schoolData["psal_sports_coed"])
-        school.languageClasses=stringToString(schoolData["language_classes"])
-        school.psalSportsGirls=stringToString(schoolData["psal_sports_girls"])
-        school.overviewParagraph=stringToString(schoolData["overview_paragraph"])
-        school.diplomaEndorsements=stringToString(schoolData["diplomaendorsements"])
-        school.advancedPlacementCourses=stringToString(schoolData["advancedplacement_courses"])
-        school.extracurricularActivities=stringToString(schoolData["extracurricular_activities"])
-        
-        //Numeric types
-        school.totalStudents=stringToInt(schoolData["total_students"])
-        
-        school.pctStuSafe=stringToFloat(schoolData["pct_stu_safe"])
-        school.attendanceRate=stringToFloat(schoolData["attendance_rate"])
-        school.graduationRate=stringToFloat(schoolData["graduation_rate"])
-        school.collegeCareerRate=stringToFloat(schoolData["college_career_rate"])
-        school.pctStuEnoughVariety=stringToFloat(schoolData["pct_stu_enough_variety"])
-        
-        //Flags
-        school.boys=stringToBool(schoolData["boys"])
-        school.pbat=stringToBool(schoolData["pbat"])
-        school.girls=stringToBool(schoolData["girls"])
-        school.ptech=stringToBool(schoolData["ptech"])
-        school.transfer=stringToBool(schoolData["specialized"])
-        school.specialized=stringToBool(schoolData["specialized"])
-        school.sharedSpace=stringToBool(schoolData["shared_space"])
-        school.international=stringToBool(schoolData["international"])
-        school.school10thSeats=stringToBool(schoolData["school_10th_seats"])
-        school.schoolAccessibilityDescription=stringToBool(schoolData["school_accessibility_description"])
-    }
-    
-    func populateSAT(satData:Dictionary<String, String>, sat:SATResult){
-        sat.dbn=stringToString(satData["dbn"])
-        sat.schoolName=stringToString(satData["school_name"])
-        
-        sat.numOfSatTestTakers=stringToInt(satData["num_of_sat_test_takers"])
-        sat.satCriticalReadingAvgScore=stringToInt(satData["sat_critical_reading_avg_score"])
-        sat.satMathAvgScore=stringToInt(satData["sat_math_avg_score"])
-        sat.satWritingAvgScore=stringToInt(satData["sat_writing_avg_score"])
-    }
-    
     //The return value here is primarily to allow for easier testing of the parsing routines
     //as the school is maintained in the context
     @discardableResult
@@ -229,12 +236,19 @@ class HSDataImporter {
         return school
     }
     
-    func batchInsertHS(schoolData:Dictionary<String, String>){
+    func batchInsertHS(schoolData:Array<Dictionary<String, String>>){
         if #available(iOS 14.0, *) {
+            var i=0
             let req=NSBatchInsertRequest(entityName: "HighSchool", managedObjectHandler: {[self, schoolData] hs in
                 let hs:HighSchool=hs as! HighSchool
-                self.populateHighSchool(schoolData:schoolData, school:hs)
-                return true
+                populateHighSchool(schoolData:schoolData[i], school:hs)
+                if includeChildEntities, let moc=hs.managedObjectContext {
+                    let address=Address(context:moc)
+                    populateAddress(schoolData: schoolData[i], address: address)
+                    hs.address=address
+                }
+                i += 1
+                return i >= schoolData.count
             })
             do {
                 try moc.execute(req)
@@ -242,7 +256,9 @@ class HSDataImporter {
                 os_log(.error, "%@", "\(error)")
             }
         } else {
-            insertHS(schoolData: schoolData)
+            schoolData.forEach { school in
+                insertHS(schoolData: school)
+            }
         }
     }
     
@@ -262,12 +278,15 @@ class HSDataImporter {
     }
 
     
-    func batchInsertSATResults(satData:Dictionary<String,String>) {
+    func batchInsertSATResults(satData:Array<Dictionary<String, String>>) {
         if #available(iOS 14.0, *) {
+            var i=0
             let req=NSBatchInsertRequest(entityName: "SATResult", managedObjectHandler: {[self, satData] satResult in
                 let satResults:SATResult=satResult as! SATResult
-                self.populateSAT(satData: satData, sat: satResults)
-                return true
+                populateSAT(satData: satData[i], sat: satResults)
+                
+                i += 1
+                return i >= satData.count
             })
             do {
                 try moc.execute(req)
@@ -275,7 +294,9 @@ class HSDataImporter {
                 os_log(.error, "%@", "\(error)")
             }
         } else {
-            insertSATResult(satData:satData)
+            satData.forEach { satResult in
+                insertSATResult(satData: satResult)
+            }
         }
     }
 }

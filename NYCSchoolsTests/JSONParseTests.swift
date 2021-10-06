@@ -120,6 +120,20 @@ foo
         XCTAssertEqual(828, stringToInt("828"))
     }
     
+    func testCorruptedFile(){
+        let bundle=Bundle(for: JSONParseTests.self)
+        let path = bundle.path(forResource: "CorruptedFile", ofType: "json")!
+        let fileHandle=FileHandle.init(forReadingAtPath: path)!
+        defer {
+            try! fileHandle.close()
+        }
+        
+        let parser=HSDataImporter(moc:moc)
+        
+        XCTAssertThrowsError(try parser.importSchools(json:fileHandle.availableData, batchLoad:false))
+        XCTAssertThrowsError(try parser.importSATResults(json:fileHandle.availableData, batchLoad:false))
+    }
+    
     /// Test to ensure that we're capturing all of the relevant fields from the JSON data.
     func testSchool() {
         let parser=HSDataImporter(moc:moc)
