@@ -50,10 +50,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 //FIXME: If the persistent container is loaded all core data ops will fail.
                 os_log(.error, "%@", "Unresolved error \(error), \(error.userInfo)")
             } else {
+                //Allow the system to schedule this call, hopefully after the ui has completed rendering
                 DispatchQueue.main.async {
                     do {
                         let count=try container.viewContext.count(for:NSFetchRequest<HighSchool>(entityName: "HighSchool"))
                         if 0==count {
+                            os_log(.debug,"Database is empty, loading in data from default files.")
                             self.clearAndReloadData()
                         }
                     } catch {
@@ -81,7 +83,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     //MARK: - Data import routines
-    func batchDelete(ctx:NSManagedObjectContext) {
+    func eraseAllHSData(ctx:NSManagedObjectContext) {
         let entities=["HighSchool","SATResult","Address"]
         entities.forEach { entity in
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entity)
@@ -98,7 +100,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
     
-    func importData(fileAndHandler:[String:(HSDataImporter)->(Data,Bool) throws ->()], ctx:NSManagedObjectContext){
+    func importHSData(fileAndHandler:[String:(HSDataImporter)->(Data,Bool) throws ->()], ctx:NSManagedObjectContext){
         fileAndHandler.forEach {
             guard let data=NSDataAsset(name: $0.key)?.data else {
                 os_log(.debug, "%@", "Unable to load the hs data file")
@@ -114,22 +116,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
     
-    
     @objc
     func mergeContextsAfterReload(sender:Notification){
         persistentContainer.viewContext.mergeChanges(fromContextDidSave: sender)
         NotificationCenter.default.removeObserver(self, name: .NSManagedObjectContextDidSave, object: sender.userInfo?["managedObjectContext"])
     }
     
+    //FIXME: This should only be run once, at first app load when the db is empty. However there is a chance, when running,
+    //in debug mode that the user will trigger an additional load before the default load has completed.
     func clearAndReloadData(){
         let bgCtx=persistentContainer.newBackgroundContext()
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(mergeContextsAfterReload(sender:)),
-                                               name: .NSManagedObjectContextDidSave,
-                                               object: bgCtx)
         bgCtx.performAndWait {
-            self.batchDelete(ctx:bgCtx)
-            self.importData(fileAndHandler:
+            NotificationCenter.default.addObserver(self,
+                                                   selector: #selector(mergeContextsAfterReload(sender:)),
+                                                   name: .NSManagedObjectContextDidSave,
+                                                   object: bgCtx)
+            
+            self.eraseAllHSData(ctx:bgCtx)
+            self.importHSData(fileAndHandler:
                                 [
                                     "2017DOEHighSchoolDirectory":HSDataImporter.importSchools,
                                     "2012SATResults":HSDataImporter.importSATResults
