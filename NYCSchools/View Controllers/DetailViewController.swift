@@ -110,6 +110,7 @@ class DetailViewController:UIViewController {
         case "website":
             if let destination=segue.destination as? WebsiteViewController, let ws=highschool?.website {
                 destination.website=ws
+                destination.school=highschool?.schoolName
             }
         case "location":
             if let destination=segue.destination as? LocationViewController {
