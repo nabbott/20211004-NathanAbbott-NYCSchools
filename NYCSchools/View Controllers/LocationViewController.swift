@@ -26,7 +26,10 @@ class LocationViewController: UIViewController {
         }
         
         schools.forEach {
-            mapView.addAnnotation(HSLocation(coordinate: CLLocationCoordinate2DMake($0.address!.latitude, $0.address!.longitude), title: $0.schoolName, subtitle: nil))
+            let annotation=HSLocation(coordinate: CLLocationCoordinate2DMake($0.address!.latitude, $0.address!.longitude), title: $0.schoolName, subtitle: nil)
+            
+            annotation.school=$0
+            mapView.addAnnotation(annotation)
         }
         
         if let center=centerOn {
@@ -39,16 +42,36 @@ class LocationViewController: UIViewController {
             mapView.setRegion(MKCoordinateRegion(center: center, latitudinalMeters: distance, longitudinalMeters: distance), animated: true)
         }
     }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        guard let mapView=sender as? MKMapView else {return}
+        guard let selectedAnnotation=mapView.selectedAnnotations.first as? HSLocation else {return}
+        
+        if let destination=segue.destination as? DetailViewController, let school=selectedAnnotation.school {
+            destination.highschool=school
+        }
+    }
 }
 
 class HSLocation:NSObject, MKAnnotation {
     var coordinate:CLLocationCoordinate2D
     var title:String?
     var subtitle:String?
+    weak var school:HighSchool?
     
     init(coordinate:CLLocationCoordinate2D, title:String?, subtitle:String?) {
         self.coordinate=coordinate
         self.title=title
         self.subtitle=subtitle
+    }
+}
+
+extension LocationViewController: MKMapViewDelegate {
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        if let vc=navigationController?.viewControllers, vc.contains(where: {$0 is DetailViewController}) {
+            return
+        }
+        
+        performSegue(withIdentifier: "locationToDetail", sender: mapView)
     }
 }
