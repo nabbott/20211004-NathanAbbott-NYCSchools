@@ -52,6 +52,7 @@ class DirectoryViewController: UIViewController {
         // Do any additional setup after loading the view.
         self.setToolbarItems({
             return [
+                UIBarButtonItem(title: "Reload", style: .plain, target: self, action: #selector(deleteAndImportHSData(sender:))),
                 UIBarButtonItem(title: "Map", style: .plain, target: self, action: #selector(showMap(sender:)))
             ]
         }(), animated: false)
@@ -91,7 +92,7 @@ class DirectoryViewController: UIViewController {
     }
     
     @objc
-    func reloadData(sender:UIControl){
+    func reloadData(sender:NSNotification){
         self.performFetch()
         self.highSchools.reloadData()
     }
