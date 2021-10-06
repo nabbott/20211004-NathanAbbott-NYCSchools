@@ -9,15 +9,46 @@ import UIKit
 import CoreData
 import os
 
+struct SortByFilterBy {
+    var sortAscending:Bool
+    var filterByBorough:[String]?
+}
+
 class DirectoryViewController: UIViewController {
     @IBOutlet weak var highSchools:UITableView!
     
+    var sortByFilterBy:SortByFilterBy? {
+        didSet {
+            if case .none = sortByFilterBy {
+                highSchoolsFR.predicate=nil
+                highSchoolsFR.sortDescriptors=ascendingSort
+            } else {
+                highSchoolsFR.sortDescriptors=sortByFilterBy!.sortAscending ? ascendingSort:descendingSort
+                if let b=sortByFilterBy?.filterByBorough {
+                    let predicate=NSPredicate(format: "address.borough in %@", b)
+                    highSchoolsFR.predicate=predicate
+                } else {
+                    highSchoolsFR.predicate=nil
+                }
+            }
+            
+            self.performFetch()
+            self.highSchools.reloadData()
+        }
+    }
+    
+    let ascendingSort:[NSSortDescriptor]=[
+        NSSortDescriptor(key: "address.borough", ascending: true),
+        NSSortDescriptor(key: "schoolName", ascending: true)
+    ]
+    
+    let descendingSort:[NSSortDescriptor]=[
+        NSSortDescriptor(key: "address.borough", ascending: false),
+        NSSortDescriptor(key: "schoolName", ascending: false)
+    ]
+    
     lazy var highSchoolsFR:NSFetchRequest<NSDictionary> = {
-        let sortDescriptors:[NSSortDescriptor]=[
-            NSSortDescriptor(key: "address.borough", ascending: true),
-            NSSortDescriptor(key: "schoolName", ascending: true)
-        ],
-        request:NSFetchRequest<NSDictionary>=NSFetchRequest(entityName: "HighSchool"),
+        let request:NSFetchRequest<NSDictionary>=NSFetchRequest(entityName: "HighSchool"),
         oid:NSExpressionDescription={
             let expr=NSExpressionDescription()
             expr.expressionResultType=NSAttributeType.objectIDAttributeType
@@ -27,7 +58,7 @@ class DirectoryViewController: UIViewController {
         }()
         
         request.resultType = .dictionaryResultType
-        request.sortDescriptors=sortDescriptors
+        request.sortDescriptors=ascendingSort
         request.returnsObjectsAsFaults=false
         request.propertiesToFetch=["schoolName","address.borough",oid]
         
@@ -69,10 +100,10 @@ class DirectoryViewController: UIViewController {
             }
             
             if #available(iOS 13.0, *) {
-                let bbi=UIBarButtonItem(image: UIImage(systemName: "line.horizontal.3.decrease.circle"), style: .plain, target: self, action: #selector(showMap(sender:)))
+                let bbi=UIBarButtonItem(image: UIImage(systemName: "line.horizontal.3.decrease.circle"), style: .plain, target: self, action: #selector(filter(sender:)))
                 items.append(bbi)
             } else {
-                items.append(UIBarButtonItem(title: "Filter", style: .plain, target: self, action: #selector(showMap(sender:))))
+                items.append(UIBarButtonItem(title: "Filter", style: .plain, target: self, action: #selector(filter(sender:))))
             }
             
             return items
@@ -111,6 +142,17 @@ class DirectoryViewController: UIViewController {
     func showMap(sender:UIControl){
         self.performSegue(withIdentifier: "showLocations", sender: self)
     }
+    
+    @objc
+    func filter(sender:UIControl){
+        guard let filterController=storyboard?.instantiateViewController(withIdentifier: "filter") else {return}
+        present(filterController, animated: true, completion: nil)
+    }
+    
+    @IBAction func returnFromFilterPopup(unwindSegue: UIStoryboardSegue) {
+        
+    }
+
     
     @objc
     func reloadData(sender:NSNotification){
