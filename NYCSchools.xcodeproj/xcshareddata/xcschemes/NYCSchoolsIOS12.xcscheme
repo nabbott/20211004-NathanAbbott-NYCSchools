@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "8B9AA8BA270AAB4000874298"
-               BuildableName = "NYCSchoolsIOS12.app"
+               BuildableName = "NYCSchools.app"
                BlueprintName = "NYCSchoolsIOS12"
                ReferencedContainer = "container:NYCSchools.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8B9AA8BA270AAB4000874298"
-            BuildableName = "NYCSchoolsIOS12.app"
+            BuildableName = "NYCSchools.app"
             BlueprintName = "NYCSchoolsIOS12"
             ReferencedContainer = "container:NYCSchools.xcodeproj">
          </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8B9AA8BA270AAB4000874298"
-            BuildableName = "NYCSchoolsIOS12.app"
+            BuildableName = "NYCSchools.app"
             BlueprintName = "NYCSchoolsIOS12"
             ReferencedContainer = "container:NYCSchools.xcodeproj">
          </BuildableReference>

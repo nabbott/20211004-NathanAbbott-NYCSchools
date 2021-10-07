@@ -38,16 +38,6 @@
                ReferencedContainer = "container:NYCSchools.xcodeproj">
             </BuildableReference>
          </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8B15860D2707E23F007EE576"
-               BuildableName = "JPMCPrototypeUITests.xctest"
-               BlueprintName = "JPMCPrototypeUITests"
-               ReferencedContainer = "container:NYCSchools.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
