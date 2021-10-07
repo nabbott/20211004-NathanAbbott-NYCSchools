@@ -132,9 +132,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                                                name: .NSManagedObjectContextDidSave,
                                                object: bgCtx)
         
+        self.isLoadingSchools=true
         DispatchQueue.global(qos: .background).async {
             bgCtx.performAndWait {
-                self.isLoadingSchools=true
                 self.eraseAllHSData(ctx:bgCtx)
                 self.importHSData(fileAndHandler:
                                     [
