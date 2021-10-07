@@ -8,6 +8,7 @@
 import Foundation
 import UIKit
 import CoreLocation
+import os
 
 class DetailViewController:UIViewController {
     var highschool:HighSchool?
@@ -79,7 +80,7 @@ class DetailViewController:UIViewController {
     
     func setupSATScores(){
         guard let results=highschool?.value(forKey: "satResults") as? NSArray else {
-            print("Could not get sat results")
+            os_log(.debug, "Could not get SAT results")
             return
         }
         
