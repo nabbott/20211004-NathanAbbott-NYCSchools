@@ -14,6 +14,7 @@ import Dispatch
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
+    var isLoadingSchools=false
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -92,7 +93,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             do {
                 let result=try ctx.execute(batchDeleteRequest)
                 if let rowsDeleted=(result as! NSBatchDeleteResult).result as? NSNumber {
-                    print("\(rowsDeleted) \(entity) rows deleted")
+                    os_log(.debug,"%@, %@ rows deleted", rowsDeleted,entity)
                 }
             } catch {
                 os_log(.error, "%@", "\(error)")
@@ -126,55 +127,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     //in debug mode that the user will trigger an additional load before the default load has completed.
     func clearAndReloadData(){
         let bgCtx=persistentContainer.newBackgroundContext()
-        bgCtx.performAndWait {
-            NotificationCenter.default.addObserver(self,
-                                                   selector: #selector(mergeContextsAfterReload(sender:)),
-                                                   name: .NSManagedObjectContextDidSave,
-                                                   object: bgCtx)
-            
-            self.eraseAllHSData(ctx:bgCtx)
-            self.importHSData(fileAndHandler:
-                                [
-                                    "2017DOEHighSchoolDirectory":HSDataImporter.importSchools,
-                                    "2012SATResults":HSDataImporter.importSATResults
-                                ],ctx:bgCtx)
-            
-            do {
-                if bgCtx.hasChanges {
-                    try bgCtx.save()
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(mergeContextsAfterReload(sender:)),
+                                               name: .NSManagedObjectContextDidSave,
+                                               object: bgCtx)
+        
+        DispatchQueue.global(qos: .background).async {
+            bgCtx.performAndWait {
+                self.isLoadingSchools=true
+                self.eraseAllHSData(ctx:bgCtx)
+                self.importHSData(fileAndHandler:
+                                    [
+                                        "2017DOEHighSchoolDirectory":HSDataImporter.importSchools,
+                                        "2012SATResults":HSDataImporter.importSATResults
+                                    ],ctx:bgCtx)
+                
+                do {
+                    if bgCtx.hasChanges {
+                        try bgCtx.save()
+                    }
+                } catch {
+                    let nserror = error as NSError
+                    os_log(.error, "%@", "Unresolved error \(nserror), \(nserror.userInfo)")
                 }
-            } catch {
-                let nserror = error as NSError
-                os_log(.error, "%@", "Unresolved error \(nserror), \(nserror.userInfo)")
+                self.isLoadingSchools=false
             }
         }
     }
 }
-
-//func importSchools(ctx:NSManagedObjectContext){
-//    guard let data=NSDataAsset(name: "2017DOEHighSchoolDirectory")?.data else {
-//        os_log(.debug, "%@", "Unable to load the hs data file")
-//        return
-//    }
-//
-//    let importer=HSDataImporter(moc: ctx, includeChildEntities: true)
-//    do {
-//        try importer.importSchools(json: data)
-//    } catch {
-//        os_log(.error, "%@", "\(error)")
-//    }
-//}
-//
-//func importSATResults(ctx:NSManagedObjectContext){
-//    guard let data=NSDataAsset(name: "2012SATResults")?.data else {
-//        os_log(.debug, "%@", "Unable to load the sat results data file")
-//        return
-//    }
-//    
-//    let importer=HSDataImporter(moc: ctx, includeChildEntities: true)
-//    do {
-//        try importer.importSATResults(json: data)
-//    } catch {
-//        os_log(.error, "%@", "\(error)")
-//    }
-//}
