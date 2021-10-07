@@ -8,6 +8,7 @@
 import UIKit
 import CoreData
 import os
+import Dispatch
 
 struct SortByFilterBy {
     var sortAscending:Bool
@@ -16,6 +17,13 @@ struct SortByFilterBy {
 
 class DirectoryViewController: UIViewController {
     @IBOutlet weak var highSchools:UITableView!
+    
+    
+    @IBOutlet weak var directoryView:UIView!
+    
+    @IBOutlet weak var loadingIndicatorView:UIView!
+    @IBOutlet weak var loadingIndicator:UIActivityIndicatorView!
+    @IBOutlet weak var loadingLabel:UILabel!
     
     var sortByFilterBy:SortByFilterBy? {
         didSet {
@@ -48,18 +56,13 @@ class DirectoryViewController: UIViewController {
     ]
     
     lazy var highSchoolsFR:NSFetchRequest<HighSchool> = {
-        let request:NSFetchRequest<HighSchool>=NSFetchRequest(entityName: "HighSchool"),
-        oid:NSExpressionDescription={
-            let expr=NSExpressionDescription()
-            expr.expressionResultType=NSAttributeType.objectIDAttributeType
-            expr.expression=NSExpression.expressionForEvaluatedObject()
-            expr.name="objectID"
-            return expr
-        }()
+        let request:NSFetchRequest<HighSchool>=NSFetchRequest(entityName: "HighSchool")
         
         request.resultType = .managedObjectResultType
         request.sortDescriptors=ascendingSort
-        request.propertiesToFetch=["schoolName"]
+        request.propertiesToFetch=["schoolName","address"]
+        request.relationshipKeyPathsForPrefetching=["address"]
+        request.returnsObjectsAsFaults=false
         
         return request
     }()
@@ -116,6 +119,13 @@ class DirectoryViewController: UIViewController {
         self.performFetch()
     }
     
+    
+    override func viewDidAppear(_ animated: Bool) {
+        if (UIApplication.shared.delegate as! AppDelegate).isLoadingSchools {
+            showLoadingView()
+        }
+    }
+    
     func performFetch() {
         do {
             try self.data.performFetch()
@@ -128,7 +138,8 @@ class DirectoryViewController: UIViewController {
     func deleteAndImportHSData(sender:UIControl){
         let alert=UIAlertController(title: "Reload", message: "Reloading will delete the entire database and re-import the data from a known good source", preferredStyle: UIAlertController.Style.alert)
         let cancel:UIAlertAction=UIAlertAction(title: "Cancel", style: .cancel, handler:{(_)->() in })
-        let ok:UIAlertAction=UIAlertAction(title: "Ok", style: .default, handler:{(_)->() in
+        let ok:UIAlertAction=UIAlertAction(title: "Ok", style: .default, handler:{[weak self](_)->() in
+            self?.showLoadingView()
             (UIApplication.shared.delegate as! AppDelegate).clearAndReloadData()
         })
         
@@ -148,15 +159,32 @@ class DirectoryViewController: UIViewController {
         present(filterController, animated: true, completion: nil)
     }
     
-    @IBAction func returnFromFilterPopup(unwindSegue: UIStoryboardSegue) {
-        
-    }
+    //Target for the unwind segue from the filter dialog
+    @IBAction func returnFromFilterPopup(unwindSegue: UIStoryboardSegue) {}
 
     
     @objc
     func reloadData(sender:NSNotification){
         self.performFetch()
-        self.highSchools.reloadData()
+        
+        //This is called via notifications that the managed object context has persisted changes
+        //which may not occur on the main thread.
+        DispatchQueue.main.async {
+            self.highSchools.reloadData()
+            self.hideLoadingView()
+        }
+    }
+    
+    func showLoadingView(){
+        self.loadingIndicator.startAnimating()
+        self.loadingIndicatorView.isHidden=false
+        self.directoryView.isHidden=true
+    }
+    
+    func hideLoadingView(){
+        self.loadingIndicatorView.isHidden=true
+        self.loadingIndicator.stopAnimating()
+        self.directoryView.isHidden=false
     }
 }
 
@@ -167,7 +195,6 @@ extension DirectoryViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         guard let sections=self.data.sections, sections.count > section else {return nil}
-        
         return sections[section].name
     }
     
@@ -176,18 +203,14 @@ extension DirectoryViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell=tableView.dequeueReusableCell(withIdentifier:"HSName", for:indexPath) as! HSTableCellView 
+        let cell=tableView.dequeueReusableCell(withIdentifier:"HSName", for:indexPath) as! HSTableCellView
         cell.name.text = self.data.object(at: indexPath).schoolName ?? "Not Available"
-        
         return cell
-        
     }
 }
 
 extension DirectoryViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        self.performSegue(withIdentifier: "detail", sender: self)
-    }
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {}
 }
 
 extension DirectoryViewController {
