@@ -33,6 +33,10 @@
 		8B9AA8CA270AAB4000874298 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8B1585F32707E232007EE576 /* Main.storyboard */; };
 		8B9AA8FC270AB5DC00874298 /* LocationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B9AA8F3270AB22F00874298 /* LocationViewController.swift */; };
 		8BA11588270FCD800096D378 /* UIViewAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA11587270FCD800096D378 /* UIViewAdditions.swift */; };
+		8BA11598270FD60E0096D378 /* UIViewAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA11587270FCD800096D378 /* UIViewAdditions.swift */; };
+		8BA11599270FD60E0096D378 /* FilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BBB1BC7270D67B100869150 /* FilterViewController.swift */; };
+		8BA1159A270FD60E0096D378 /* LocationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B9AA8F3270AB22F00874298 /* LocationViewController.swift */; };
+		8BA115B1270FD8DC0096D378 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BA115B0270FD8DC0096D378 /* WebKit.framework */; };
 		8BBB1BC8270D67B100869150 /* FilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BBB1BC7270D67B100869150 /* FilterViewController.swift */; };
 		8BC1496C270E78D1004B212A /* CoreDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BC1496B270E78D1004B212A /* CoreDataTests.swift */; };
 		8BE526F4270D12E1008832C6 /* CorruptedFile.json in Resources */ = {isa = PBXBuildFile; fileRef = 8BE526E4270D11C6008832C6 /* CorruptedFile.json */; };
@@ -72,11 +76,12 @@
 		8B5DA715270A1E5C0096C07A /* Address.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Address.json; sourceTree = "<group>"; };
 		8B5DA716270A1E640096C07A /* SAT.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = SAT.json; sourceTree = "<group>"; };
 		8B9AA8AC270AA44100874298 /* WebsiteViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsiteViewController.swift; sourceTree = "<group>"; };
-		8B9AA8CE270AAB4000874298 /* NYCSchoolsIOS12.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = NYCSchoolsIOS12.app; path = NYCSchools.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8B9AA8CE270AAB4000874298 /* NYCSchools.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NYCSchools.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8B9AA8E5270AAE7000874298 /* NYCSchools.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NYCSchools.entitlements; sourceTree = "<group>"; };
 		8B9AA8F3270AB22F00874298 /* LocationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationViewController.swift; sourceTree = "<group>"; };
 		8B9AA937270AE38300874298 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		8BA11587270FCD800096D378 /* UIViewAdditions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewAdditions.swift; sourceTree = "<group>"; };
+		8BA115B0270FD8DC0096D378 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		8BBB1BC7270D67B100869150 /* FilterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterViewController.swift; sourceTree = "<group>"; };
 		8BC1496B270E78D1004B212A /* CoreDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataTests.swift; sourceTree = "<group>"; };
 		8BE526E4270D11C6008832C6 /* CorruptedFile.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = CorruptedFile.json; sourceTree = "<group>"; };
@@ -102,6 +107,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8BA115B1270FD8DC0096D378 /* WebKit.framework in Frameworks */,
 				8B9AA8C5270AAB4000874298 /* UIKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -125,7 +131,7 @@
 			children = (
 				8B1585EA2707E232007EE576 /* NYCSchools.app */,
 				8B1586032707E23F007EE576 /* NYCSchoolsTests.xctest */,
-				8B9AA8CE270AAB4000874298 /* NYCSchoolsIOS12.app */,
+				8B9AA8CE270AAB4000874298 /* NYCSchools.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -190,6 +196,7 @@
 		8B5DA6A027091DA30096C07A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				8BA115B0270FD8DC0096D378 /* WebKit.framework */,
 				8B5DA6A127091DA30096C07A /* UIKit.framework */,
 			);
 			name = Frameworks;
@@ -267,7 +274,7 @@
 			);
 			name = NYCSchoolsIOS12;
 			productName = NYCSchools;
-			productReference = 8B9AA8CE270AAB4000874298 /* NYCSchoolsIOS12.app */;
+			productReference = 8B9AA8CE270AAB4000874298 /* NYCSchools.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -374,6 +381,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8BA11598270FD60E0096D378 /* UIViewAdditions.swift in Sources */,
+				8BA11599270FD60E0096D378 /* FilterViewController.swift in Sources */,
+				8BA1159A270FD60E0096D378 /* LocationViewController.swift in Sources */,
 				8B9AA8BC270AAB4000874298 /* HSlTableViewCell.swift in Sources */,
 				8B9AA8BD270AAB4000874298 /* DirectoryViewController.swift in Sources */,
 				8B9AA8BE270AAB4000874298 /* AppDelegate.swift in Sources */,
@@ -619,19 +629,31 @@
 		8BC14962270E770E004B212A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NYCSchools/NYCSchools.entitlements;
 				COPY_PHASE_STRIP = NO;
+				DEVELOPMENT_TEAM = YTMVKPZGGB;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				INFOPLIST_FILE = "$(SRCROOT)/NYCSchools/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sundaylogic.NYCSchools;
 				PRODUCT_NAME = NYCSchools;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
 		8BC14963270E770E004B212A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NYCSchools/NYCSchools.entitlements;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = YTMVKPZGGB;
+				INFOPLIST_FILE = "$(SRCROOT)/NYCSchools/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sundaylogic.NYCSchools;
 				PRODUCT_NAME = NYCSchools;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
