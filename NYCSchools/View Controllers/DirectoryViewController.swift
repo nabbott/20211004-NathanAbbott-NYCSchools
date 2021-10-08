@@ -1,3 +1,4 @@
+
 //
 //  ViewController.swift
 //  JPMCPrototype
@@ -15,108 +16,116 @@ struct SortByFilterBy {
     var filterByBorough:[String]?
 }
 
+fileprivate
+let ascendingSort:[NSSortDescriptor]=[
+    NSSortDescriptor(key: "address.borough", ascending: true),
+    NSSortDescriptor(key: "schoolName", ascending: true)
+]
+
+fileprivate
+let descendingSort:[NSSortDescriptor]=[
+    NSSortDescriptor(key: "address.borough", ascending: false),
+    NSSortDescriptor(key: "schoolName", ascending: false)
+]
+
+fileprivate
+func defaultFetchRequest()->NSFetchRequest<HighSchool> {
+    let request:NSFetchRequest<HighSchool>=NSFetchRequest(entityName: "HighSchool")
+    
+    request.resultType = .managedObjectResultType
+    request.sortDescriptors=ascendingSort
+    request.propertiesToFetch=["schoolName","address"]
+    request.relationshipKeyPathsForPrefetching=["address"]
+    request.returnsObjectsAsFaults=false
+    
+    return request
+}
+
+fileprivate
+func searchFetchRequest(_ searchText:String, fetchReq:NSFetchRequest<HighSchool>? = nil)->NSFetchRequest<HighSchool> {
+    let req=fetchReq ?? defaultFetchRequest()
+    guard searchText.count >  0 else {
+        return  req
+    }
+    
+    req.predicate=NSPredicate(format: "schoolName like[c] %@", "*\(searchText)*")
+    return req
+}
+
+fileprivate
+func fetchedResultsController<E>(_ fetchRequest:NSFetchRequest<E>) -> NSFetchedResultsController<E> where E:NSManagedObject {
+    let moc:NSManagedObjectContext=(UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    let fetchRequest:NSFetchRequest<E>=fetchRequest
+    let frc:NSFetchedResultsController<E>=NSFetchedResultsController(
+        fetchRequest: fetchRequest,
+        managedObjectContext: moc,
+        sectionNameKeyPath: "address.borough",
+        cacheName: "schools")
+
+    return frc
+}
+
 class DirectoryViewController: UIViewController {
-    @IBOutlet weak var highSchools:UITableView!
-    
-    
     @IBOutlet weak var directoryView:UIView!
+    @IBOutlet weak var highSchools:UITableView!
     
     @IBOutlet weak var loadingIndicatorView:UIView!
     @IBOutlet weak var loadingIndicator:UIActivityIndicatorView!
     @IBOutlet weak var loadingLabel:UILabel!
+
+    
+    @IBOutlet weak var searchBar:UISearchBar!
+    @IBOutlet weak var seachResultsView:UIView!
+    @IBOutlet weak var searchText:UILabel!
+    
     
     var sortByFilterBy:SortByFilterBy? {
         didSet {
             if case .none = sortByFilterBy {
-                highSchoolsFR.predicate=nil
-                highSchoolsFR.sortDescriptors=ascendingSort
+                schoolsFetchedResultsContoller = fetchedResultsController(defaultFetchRequest())
             } else {
-                highSchoolsFR.sortDescriptors=sortByFilterBy!.sortAscending ? ascendingSort:descendingSort
+                let sfr=schoolsFetchedResultsContoller.fetchRequest
+                sfr.sortDescriptors=sortByFilterBy!.sortAscending ? ascendingSort:descendingSort
                 if let b=sortByFilterBy?.filterByBorough {
-                    let predicate=NSPredicate(format: "address.borough in %@", b)
-                    highSchoolsFR.predicate=predicate
+                    var filterPredicate=NSPredicate(format: "address.borough in %@", b)
+                    if let predicate=sfr.predicate {
+                        filterPredicate=NSCompoundPredicate(andPredicateWithSubpredicates: [filterPredicate,predicate])
+                    }
+                    
+                    sfr.predicate=filterPredicate
                 } else {
-                    highSchoolsFR.predicate=nil
+                    sfr.predicate=nil
                 }
+                schoolsFetchedResultsContoller = fetchedResultsController(sfr)
             }
-            
-            self.performFetch()
-            self.highSchools.reloadData()
         }
     }
     
-    let ascendingSort:[NSSortDescriptor]=[
-        NSSortDescriptor(key: "address.borough", ascending: true),
-        NSSortDescriptor(key: "schoolName", ascending: true)
-    ]
-    
-    let descendingSort:[NSSortDescriptor]=[
-        NSSortDescriptor(key: "address.borough", ascending: false),
-        NSSortDescriptor(key: "schoolName", ascending: false)
-    ]
-    
-    lazy var highSchoolsFR:NSFetchRequest<HighSchool> = {
-        let request:NSFetchRequest<HighSchool>=NSFetchRequest(entityName: "HighSchool")
-        
-        request.resultType = .managedObjectResultType
-        request.sortDescriptors=ascendingSort
-        request.propertiesToFetch=["schoolName","address"]
-        request.relationshipKeyPathsForPrefetching=["address"]
-        request.returnsObjectsAsFaults=false
-        
-        return request
-    }()
-    
-    lazy var data:NSFetchedResultsController<HighSchool>={
-        let moc:NSManagedObjectContext=(UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
-        let fetchRequest:NSFetchRequest<HighSchool>=highSchoolsFR
-        let frc:NSFetchedResultsController<HighSchool>=NSFetchedResultsController(
-            fetchRequest: fetchRequest,
-            managedObjectContext: moc,
-            sectionNameKeyPath: "address.borough",
-            cacheName: "schools")
-
-        return frc
-    }()
-    
+    lazy var schoolsFetchedResultsContoller = fetchedResultsController(defaultFetchRequest()) {
+        didSet {
+            do {
+                try schoolsFetchedResultsContoller.performFetch()
+                self.highSchools.reloadData()
+            } catch {
+                os_log(.error, log: .default, "@%", error.localizedDescription)
+            }
+        }
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-        self.setToolbarItems({
-            var items:[UIBarButtonItem]=[]
-            #if DEBUG
-            if #available(iOS 13.0, *) {
-                let bbi=UIBarButtonItem(image:UIImage(systemName: "arrow.2.circlepath.circle.fill"), style: .plain, target: self, action: #selector(deleteAndImportHSData(sender:)))
-                items.append(bbi)
-            } else {
-                items.append(UIBarButtonItem(title: "Reload", style: .plain, target: self, action: #selector(deleteAndImportHSData(sender:))))
-            }
-            #endif
-
-            if #available(iOS 13.0, *) {
-                let bbi=UIBarButtonItem(image: UIImage(systemName: "map"), style: .plain, target: self, action: #selector(showMap(sender:)))
-                items.append(bbi)
-            } else {
-                items.append(UIBarButtonItem(title: "Map", style: .plain, target: self, action: #selector(showMap(sender:))))
-            }
-            
-            if #available(iOS 13.0, *) {
-                let bbi=UIBarButtonItem(image: UIImage(systemName: "line.horizontal.3.decrease.circle"), style: .plain, target: self, action: #selector(filter(sender:)))
-                items.append(bbi)
-            } else {
-                items.append(UIBarButtonItem(title: "Filter", style: .plain, target: self, action: #selector(filter(sender:))))
-            }
-            
-            return items
-        }(), animated: false)
-        
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(reloadData(sender:)),
+                                               selector: #selector(refreshDataAfertMOCUpdate(sender:)),
                                                name: .NSManagedObjectContextObjectsDidChange,
                                                object: (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext)
-        
-        self.performFetch()
+        self.setupToolbar()
+        do {
+            try schoolsFetchedResultsContoller.performFetch()
+            self.highSchools.reloadData()
+        } catch {
+            os_log(.error, log: .default, "@%", error.localizedDescription)
+        }
     }
     
     
@@ -126,14 +135,48 @@ class DirectoryViewController: UIViewController {
         }
     }
     
-    func performFetch() {
-        do {
-            try self.data.performFetch()
-        } catch {
-            os_log(.error, log: .default, "@%", error.localizedDescription)
-        }
+    func setupToolbar(){
+        self.setToolbarItems({
+            var items:[UIBarButtonItem]=[]
+            #if DEBUG
+            if #available(iOS 13.0, *) {
+                let bbi=UIBarButtonItem(image:UIImage(systemName: "arrow.2.circlepath.circle.fill"), style: .plain, target: self, action: #selector(deleteAndImportHSData(sender:)))
+                bbi.possibleTitles=["Reload"]
+                items.append(bbi)
+            } else {
+                items.append(UIBarButtonItem(title: "Reload", style: .plain, target: self, action: #selector(deleteAndImportHSData(sender:))))
+            }
+            #endif
+
+            if #available(iOS 13.0, *) {
+                let bbi=UIBarButtonItem(image: UIImage(systemName: "map"), style: .plain, target: self, action: #selector(showMap(sender:)))
+                bbi.possibleTitles=["Map"]
+                items.append(bbi)
+            } else {
+                items.append(UIBarButtonItem(title: "Map", style: .plain, target: self, action: #selector(showMap(sender:))))
+            }
+            
+            if #available(iOS 13.0, *) {
+                let bbi=UIBarButtonItem(image: UIImage(systemName: "line.horizontal.3.decrease.circle"), style: .plain, target: self, action: #selector(filter(sender:)))
+                bbi.possibleTitles=["Filter"]
+                items.append(bbi)
+            } else {
+                items.append(UIBarButtonItem(title: "Filter", style: .plain, target: self, action: #selector(filter(sender:))))
+            }
+            
+            if #available(iOS 13.0, *) {
+                let bbi=UIBarButtonItem(barButtonSystemItem: .search, target: self, action: #selector(search(sender:)))
+                bbi.possibleTitles=["Search"]
+                items.append(bbi)
+            } else {
+                items.append(UIBarButtonItem(barButtonSystemItem: .search, target: self, action: #selector(search(sender:))))
+            }
+            
+            return items
+        }(), animated: false)
     }
     
+    //MARK: - Toolbar actions
     @objc
     func deleteAndImportHSData(sender:UIControl){
         let alert=UIAlertController(title: "Reload", message: "Reloading will delete the entire database and re-import the data from a known good source", preferredStyle: UIAlertController.Style.alert)
@@ -153,58 +196,85 @@ class DirectoryViewController: UIViewController {
         self.performSegue(withIdentifier: "showLocations", sender: self)
     }
     
+    //FIXME: Set the borough to the curent setting if there is one
     @objc
     func filter(sender:UIControl){
         guard let filterController=storyboard?.instantiateViewController(withIdentifier: "filter") else {return}
         present(filterController, animated: true, completion: nil)
     }
     
+    @objc
+    func search(sender:UIControl){
+        searchBar.text=nil
+        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {self.searchBar.isHidden=false})
+    }
+    
     //Target for the unwind segue from the filter dialog
     @IBAction func returnFromFilterPopup(unwindSegue: UIStoryboardSegue) {}
-
     
+    @IBAction func showAll(sender:UIControl) {
+        schoolsFetchedResultsContoller=fetchedResultsController(defaultFetchRequest())
+        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {
+            self.resetSearchViews()
+        })
+    }
+    
+    //MARK: - Handling changes in the context
+    //FIXME: Change this to "reload in response to changes in context"
     @objc
-    func reloadData(sender:NSNotification){
-        self.performFetch()
-        
+    func refreshDataAfertMOCUpdate(sender:NSNotification){
         //This is called via notifications that the managed object context has persisted changes
         //which may not occur on the main thread.
         DispatchQueue.main.async {
-            self.highSchools.reloadData()
+            self.schoolsFetchedResultsContoller=fetchedResultsController(defaultFetchRequest())
+            
+            self.resetSearchViews()
             self.hideLoadingView()
         }
     }
     
     func showLoadingView(){
-        self.loadingIndicator.startAnimating()
-        self.loadingIndicatorView.isHidden=false
-        self.directoryView.isHidden=true
+        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {[unowned self] in
+            self.loadingIndicator.startAnimating()
+            self.loadingIndicatorView.isHidden=false
+            self.directoryView.isHidden=true
+        })
     }
     
     func hideLoadingView(){
-        self.loadingIndicatorView.isHidden=true
-        self.loadingIndicator.stopAnimating()
-        self.directoryView.isHidden=false
+        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {[unowned self] in
+            self.loadingIndicatorView.isHidden=true
+            self.loadingIndicator.stopAnimating()
+            self.directoryView.isHidden=false
+        })
+    }
+    
+    func resetSearchViews(){
+        searchBar.isHidden=true
+        searchBar.text=nil
+        
+        searchText.text=nil
+        seachResultsView.isHidden=true
     }
 }
 
 extension DirectoryViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return self.data.sections?.count ?? 0
+        return self.schoolsFetchedResultsContoller.sections?.count ?? 0
     }
     
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        guard let sections=self.data.sections, sections.count > section else {return nil}
+        guard let sections=self.schoolsFetchedResultsContoller.sections, sections.count > section else {return nil}
         return sections[section].name
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.data.sections?[section].numberOfObjects ?? 0
+        return self.schoolsFetchedResultsContoller.sections?[section].numberOfObjects ?? 0
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell=tableView.dequeueReusableCell(withIdentifier:"HSName", for:indexPath) as! HSTableCellView
-        cell.name.text = self.data.object(at: indexPath).schoolName ?? "Not Available"
+        cell.name.text = self.schoolsFetchedResultsContoller.object(at: indexPath).schoolName ?? "Not Available"
         return cell
     }
 }
@@ -213,6 +283,32 @@ extension DirectoryViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {}
 }
 
+//MARK: - Search Handlers
+extension DirectoryViewController:UISearchBarDelegate {
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        os_log(.debug,"Search text did change")
+    }
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        defer {
+            searchBar.resignFirstResponder()
+            UIView.animate(withDuration: view.defaultAnimationDuration, animations: {
+                searchBar.isHidden=true
+                self.searchText.text=searchBar.text
+                self.seachResultsView.isHidden = (searchBar.text?.isEmpty ?? true)
+            })
+        }
+        
+        guard let sText=searchBar.text, !sText.isEmpty else {
+            return
+        }
+        
+        let searchFR=searchFetchRequest(sText, fetchReq: schoolsFetchedResultsContoller.fetchRequest)
+        self.schoolsFetchedResultsContoller=fetchedResultsController(searchFR)
+    }
+}
+
+//MARK: - Segue Handlers
 extension DirectoryViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         switch segue.identifier {
@@ -221,7 +317,7 @@ extension DirectoryViewController {
                 return
             }
             
-            let oid=self.data.object(at: selectedIndex).objectID
+            let oid=self.schoolsFetchedResultsContoller.object(at: selectedIndex).objectID
             
             if let destination=segue.destination as? DetailViewController {
                 let moc=(UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -230,7 +326,8 @@ extension DirectoryViewController {
             }
         case "showLocations":
             if let destination=segue.destination as? LocationViewController {
-                let fr=highSchoolsFR.copy() as! NSFetchRequest<HighSchool>
+                let fr=schoolsFetchedResultsContoller.fetchRequest.copy() as! NSFetchRequest<HighSchool>
+                fr.resultType = .managedObjectResultType
                 fr.relationshipKeyPathsForPrefetching=["address"]
                 
                 let results=try! (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext.fetch(fr)

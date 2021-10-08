@@ -32,6 +32,7 @@
 		8B9AA8C9270AAB4000874298 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8B1585F92707E23F007EE576 /* Assets.xcassets */; };
 		8B9AA8CA270AAB4000874298 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8B1585F32707E232007EE576 /* Main.storyboard */; };
 		8B9AA8FC270AB5DC00874298 /* LocationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B9AA8F3270AB22F00874298 /* LocationViewController.swift */; };
+		8BA11588270FCD800096D378 /* UIViewAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA11587270FCD800096D378 /* UIViewAdditions.swift */; };
 		8BBB1BC8270D67B100869150 /* FilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BBB1BC7270D67B100869150 /* FilterViewController.swift */; };
 		8BC1496C270E78D1004B212A /* CoreDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BC1496B270E78D1004B212A /* CoreDataTests.swift */; };
 		8BE526F4270D12E1008832C6 /* CorruptedFile.json in Resources */ = {isa = PBXBuildFile; fileRef = 8BE526E4270D11C6008832C6 /* CorruptedFile.json */; };
@@ -75,6 +76,7 @@
 		8B9AA8E5270AAE7000874298 /* NYCSchools.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NYCSchools.entitlements; sourceTree = "<group>"; };
 		8B9AA8F3270AB22F00874298 /* LocationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationViewController.swift; sourceTree = "<group>"; };
 		8B9AA937270AE38300874298 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		8BA11587270FCD800096D378 /* UIViewAdditions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewAdditions.swift; sourceTree = "<group>"; };
 		8BBB1BC7270D67B100869150 /* FilterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterViewController.swift; sourceTree = "<group>"; };
 		8BC1496B270E78D1004B212A /* CoreDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataTests.swift; sourceTree = "<group>"; };
 		8BE526E4270D11C6008832C6 /* CorruptedFile.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = CorruptedFile.json; sourceTree = "<group>"; };
@@ -162,6 +164,7 @@
 			isa = PBXGroup;
 			children = (
 				8B5DA69227091C700096C07A /* HSlTableViewCell.swift */,
+				8BA11587270FCD800096D378 /* UIViewAdditions.swift */,
 			);
 			path = "Views and Controllers";
 			sourceTree = "<group>";
@@ -350,6 +353,7 @@
 				8B1585EE2707E232007EE576 /* AppDelegate.swift in Sources */,
 				8BBB1BC8270D67B100869150 /* FilterViewController.swift in Sources */,
 				8B5DA6BA2709350F0096C07A /* DetailViewController.swift in Sources */,
+				8BA11588270FCD800096D378 /* UIViewAdditions.swift in Sources */,
 				8B9AA8AD270AA44100874298 /* WebsiteViewController.swift in Sources */,
 				8B1585F82707E232007EE576 /* NYCSchools.xcdatamodeld in Sources */,
 				8B5DA6E827095DF00096C07A /* ParseUtil.swift in Sources */,

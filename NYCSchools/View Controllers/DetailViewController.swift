@@ -38,8 +38,6 @@ class DetailViewController:UIViewController {
     func setupToolbar(){
         self.setToolbarItems({
             var items:[UIBarButtonItem]=[]
-
-            
             if let _ = highschool?.website {
                 if #available(iOS 13.0, *) {
                     let bbi=UIBarButtonItem(image: UIImage(systemName: "globe"), style: .plain, target: self, action: #selector(showWebsite(sender:)))
