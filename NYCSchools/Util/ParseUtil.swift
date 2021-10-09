@@ -227,7 +227,7 @@ class HSDataImporter {
     //as the school is maintained in the context
     @discardableResult
     func insertHS(schoolData:Dictionary<String, String>) -> HighSchool {
-        let school=HighSchool(context: self.moc)
+        let school=NSEntityDescription.insertNewObject(forEntityName: "HighSchool", into: moc) as! HighSchool
         populateHighSchool(schoolData: schoolData, school: school)
         if includeChildEntities {
             school.address=insertAddress(schoolData: schoolData)
@@ -239,14 +239,9 @@ class HSDataImporter {
     func batchInsertHS(schoolData:Array<Dictionary<String, String>>){
         if #available(iOS 14.0, *) {
             var i=0
-            let req=NSBatchInsertRequest(entityName: "HighSchool", managedObjectHandler: {[self, schoolData] hs in
+            let req=NSBatchInsertRequest(entityName: "HighSchool", managedObjectHandler: {[schoolData] hs in
                 let hs:HighSchool=hs as! HighSchool
                 populateHighSchool(schoolData:schoolData[i], school:hs)
-                if includeChildEntities, let moc=hs.managedObjectContext {
-                    let address=Address(context:moc)
-                    populateAddress(schoolData: schoolData[i], address: address)
-                    hs.address=address
-                }
                 i += 1
                 return i >= schoolData.count
             })
@@ -270,13 +265,13 @@ class HSDataImporter {
         let fReq:NSFetchRequest<HighSchool>=NSFetchRequest()
         fReq.entity=NSEntityDescription.entity(forEntityName: "HighSchool", in: moc)
         fReq.returnsObjectsAsFaults=false
-        
+
         schoolData.forEach { school in
             guard let dbn=stringToString(school["dbn"]) else {
                 os_log(.debug,"%@", "Could not parse dbn")
                 return
             }
-            
+
             fReq.predicate=NSPredicate(format: "dbn=%@", dbn)
             if let hs=(try? moc.persistentStoreCoordinator?.execute(fReq, with: moc) as? Array<HighSchool>)?.first {
                 hs.address=insertAddress(schoolData: school)
@@ -286,14 +281,14 @@ class HSDataImporter {
     
     @discardableResult
     func insertAddress(schoolData:Dictionary<String, String>, ctx:NSManagedObjectContext? = nil)->Address {
-        let address=Address(context: ctx ?? moc)
+        let address=NSEntityDescription.insertNewObject(forEntityName: "Address", into: ctx ?? moc) as! Address
         populateAddress(schoolData: schoolData, address: address)
         return address
     }
     
     @discardableResult
     func insertSATResult(satData:Dictionary<String, String>) -> SATResult {
-        let satResults=SATResult(context: moc)
+        let satResults=NSEntityDescription.insertNewObject(forEntityName: "SATResult", into: moc) as! SATResult
         populateSAT(satData: satData, sat: satResults)
         
         return satResults
