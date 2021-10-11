@@ -84,39 +84,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     //MARK: - Data import routines
-    func eraseAllHSData(ctx:NSManagedObjectContext) {
-        let entities=["HighSchool","SATResult","Address"]
-        entities.forEach { entity in
-            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entity)
-            let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-            batchDeleteRequest.resultType = .resultTypeCount
-            do {
-                let result=try ctx.execute(batchDeleteRequest)
-                if let rowsDeleted=(result as! NSBatchDeleteResult).result as? NSNumber {
-                    os_log(.debug,"%@, %@ rows deleted", rowsDeleted,entity)
-                }
-            } catch {
-                os_log(.error, "%@", "\(error)")
-            }
-        }
-    }
-    
-    func importHSData(fileAndHandler:[String:(HSDataImporter)->(Data,Bool) throws ->()], ctx:NSManagedObjectContext){
-        fileAndHandler.forEach {
-            guard let data=NSDataAsset(name: $0.key)?.data else {
-                os_log(.debug, "%@", "Unable to load the hs data file")
-                return
-            }
-            
-            let importer=HSDataImporter(moc: ctx, includeChildEntities: true)
-            do {
-                try $0.value(importer)(data,true)
-            } catch {
-                os_log(.error, "%@", "\(error)")
-            }
-        }
-    }
-    
     @objc
     func mergeContextsAfterReload(sender:Notification){
         persistentContainer.viewContext.mergeChanges(fromContextDidSave: sender)
@@ -135,21 +102,34 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         self.isLoadingSchools=true
         DispatchQueue.global(qos: .background).async {
             bgCtx.performAndWait {
-                self.eraseAllHSData(ctx:bgCtx)
-                self.importHSData(fileAndHandler:
-                                    [
-                                        "2017DOEHighSchoolDirectory":HSDataImporter.importSchools,
-                                        "2012SATResults":HSDataImporter.importSATResults
-                                    ],ctx:bgCtx)
-                
                 do {
+                    //FIXME: Maybe wrap the delete and import routines in a transaction.
+                    let importer=HSDataImporter(batchProcess: true)
+                    
+                    try importer.deleteAllHSData(ctx: bgCtx, batch: true)
+                    
+                    guard let schools=NSDataAsset(name: "2017DOEHighSchoolDirectory")?.data else {
+                        os_log(.debug, "%@", "Unable to load the hs data file")
+                        return
+                    }
+                    
+                    guard let satResults=NSDataAsset(name: "2012SATResults")?.data else {
+                        os_log(.debug, "%@", "Unable to load the sat results data file")
+                        return
+                    }
+                    
+                    try importer.importAllDataAndEstablishRelationships(
+                        highSchools: schools,
+                        satResults: satResults,
+                        ctx: bgCtx)
+                    
                     if bgCtx.hasChanges {
                         try bgCtx.save()
                     }
                 } catch {
-                    let nserror = error as NSError
-                    os_log(.error, "%@", "Unresolved error \(nserror), \(nserror.userInfo)")
+                    os_log(.error,"%@",error as NSError)
                 }
+                
                 self.isLoadingSchools=false
             }
         }

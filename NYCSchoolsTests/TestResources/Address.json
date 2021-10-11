@@ -1,0 +1,23 @@
+[{
+    "bbl":"4006390016",
+    "bin":"4009594",
+    "boro":"Q",
+    "borough":"QUEENS   ",
+    "building_code":"Q570",
+    "bus":"Q101, Q102, Q104, Q66",
+    "campus_name":"Spring Creek Educational Campus",
+    "census_tract":"57",
+    "city":"Astoria",
+    "community_board":"1",
+    "council_district":"26",
+    "dbn":"30Q501",
+    "latitude":"40.7561",
+    "location":"35-12 35th Avenue, Astoria NY 11106 (40.756099, -73.925182)",
+    "longitude":"-73.9252",
+    "neighborhood":"Astoria",
+    "nta":"Astoria                                                                    ",
+    "primary_address_line_1":"35-12 35th Avenue",
+    "state_code":"NY",
+    "subway":"M, R to Steinway St ; N, Q to 36 Ave-Washington Ave",
+    "zip":"11106"
+}]

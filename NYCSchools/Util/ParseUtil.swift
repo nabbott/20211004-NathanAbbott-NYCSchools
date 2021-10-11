@@ -98,10 +98,14 @@ func stringToInt(_ str:String?)->Int16 {
     return 0
 }
 
+//FIXME: All entities that depend on DBN to facilitate relationships with a highschool
+//should log if this value is missing from the original file. It should not be for
+//addresses as this is part of the HS data
 internal
 func populateAddress(schoolData:Dictionary<String, String>, address:Address){
     address.bbl=stringToString(schoolData["bbl"])
     address.bin=stringToString(schoolData["bin"])
+    address.dbn=stringToString(schoolData["dbn"])
     address.zip=stringToString(schoolData["zip"])
     address.bus=stringToString(schoolData["bus"])
     address.nta=stringToString(schoolData["nta"])
@@ -172,6 +176,9 @@ func populateHighSchool(schoolData:Dictionary<String, String>, school:HighSchool
     school.schoolAccessibilityDescription=stringToBool(schoolData["school_accessibility_description"])
 }
 
+//FIXME: All entities that depend on DBN to facilitate relationships with a highschool
+//should log if this value is missing from the original file. It should not be for
+//addresses as this is part of the HS data
 internal
 func populateSAT(satData:Dictionary<String, String>, sat:SATResult){
     sat.dbn=stringToString(satData["dbn"])
@@ -184,137 +191,133 @@ func populateSAT(satData:Dictionary<String, String>, sat:SATResult){
 }
 
 //MARK: - The data import engine. Parses a data object containing JSON.
+typealias JSONRecords = Array<Dictionary<String,String>>
 class HSDataImporter {
-    private let moc:NSManagedObjectContext
-    private let includeChildEntities:Bool
+//    private let moc:NSManagedObjectContext
+//    private let includeChildEntities:Bool
     
-    /// Creates a new importor
-    /// - Parameters:
-    ///   - moc: The context the new entities should be created in.
-    ///   - includeChildEntities: If this is true, the child entities of High School (address, etc) will be created. Set to false to make testing easier
-    init(moc:NSManagedObjectContext, includeChildEntities:Bool=false){
-        self.moc=moc
-        self.includeChildEntities=includeChildEntities
+    private let batchProcess:Bool
+    init(batchProcess:Bool=false) {
+        self.batchProcess=batchProcess
     }
     
-    func importSchools(json:Data, batchLoad:Bool=false) throws {
-        let rawJSON=try JSONSerialization.jsonObject(with: json, options: .allowFragments)
-        let records:Array<Dictionary<String, String>>=rawJSON as! Array<Dictionary<String, String>>
+    func dataToJSON(data:Data) throws -> JSONRecords {
+        let rawJSON=try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+        return rawJSON as! Array<Dictionary<String, String>>
+    }
+    
+    func importAllDataAndEstablishRelationships(highSchools:Data, satResults:Data, ctx:NSManagedObjectContext) throws {
+        let hs=try dataToJSON(data: highSchools)
+        let sat=try dataToJSON(data: satResults)
+        try importAllDataAndEstablishRelationships(highSchools: hs, satResults: sat, ctx: ctx)
+    }
+    
+    func importAllDataAndEstablishRelationships(highSchools:JSONRecords, satResults:JSONRecords, ctx:NSManagedObjectContext) throws {
+        try importSchools(schools: highSchools,ctx: ctx)
+        try importAddresses(addresses: highSchools,ctx: ctx)
+        try importSATResults(satResults: satResults,ctx: ctx)
         
-        if batchLoad {
-            batchInsertHS(schoolData: records)
-        } else {
-            records.forEach { school in
-                insertHS(schoolData: school)
-            }
-        }
+        try establishRelationship(ctx: ctx, entityType: SATResult.self, relKey: "satResults")
+        try establishRelationship(ctx: ctx, entityType: Address.self, relKey: "address")
     }
-    
-    func importSATResults(json:Data, batchLoad:Bool=false) throws {
-        let rawJSON=try JSONSerialization.jsonObject(with: json, options: .allowFragments)
-        let records:Array<Dictionary<String, String>>=rawJSON as! Array<Dictionary<String, String>>
-        if batchLoad {
-            batchInsertSATResults(satData: records)
-        } else {
-            records.forEach { satResult in
-                insertSATResult(satData: satResult)
-            }
-        }
-        
-    }
-        
-    //The return value here is primarily to allow for easier testing of the parsing routines
-    //as the school is maintained in the context
-    @discardableResult
-    func insertHS(schoolData:Dictionary<String, String>) -> HighSchool {
-        let school=NSEntityDescription.insertNewObject(forEntityName: "HighSchool", into: moc) as! HighSchool
-        populateHighSchool(schoolData: schoolData, school: school)
-        if includeChildEntities {
-            school.address=insertAddress(schoolData: schoolData)
-        }
-        
-        return school
-    }
-    
-    func batchInsertHS(schoolData:Array<Dictionary<String, String>>){
-        if #available(iOS 14.0, *) {
-            var i=0
-            let req=NSBatchInsertRequest(entityName: "HighSchool", managedObjectHandler: {[schoolData] hs in
-                let hs:HighSchool=hs as! HighSchool
-                populateHighSchool(schoolData:schoolData[i], school:hs)
-                i += 1
-                return i >= schoolData.count
-            })
-            do {
-                try moc.execute(req)
-                let count=try moc.count(for:NSFetchRequest<HighSchool>(entityName: "HighSchool"))
-                os_log(.debug,"%@","Inserted \(count) school records")
-                
-                batchInsertAddress(schoolData: schoolData)
-            } catch {
-                os_log(.error, "%@", "\(error)")
-            }
-        } else {
-            schoolData.forEach { school in
-                insertHS(schoolData: school)
-            }
-        }
-    }
-    
-    func batchInsertAddress(schoolData:Array<Dictionary<String, String>>){
-        let fReq:NSFetchRequest<HighSchool>=NSFetchRequest()
-        fReq.entity=NSEntityDescription.entity(forEntityName: "HighSchool", in: moc)
-        fReq.returnsObjectsAsFaults=false
 
-        schoolData.forEach { school in
-            guard let dbn=stringToString(school["dbn"]) else {
-                os_log(.debug,"%@", "Could not parse dbn")
+    func importSchools(schools:JSONRecords, ctx:NSManagedObjectContext) throws {
+        try genericInsert(ctx: ctx, records: schools, populator:{ (record:Dictionary<String,String>, entity:HighSchool) in
+            populateHighSchool(schoolData: record, school: entity)
+        })
+    }
+    
+    func importAddresses(addresses:JSONRecords, ctx:NSManagedObjectContext) throws {
+        try genericInsert(ctx: ctx, records: addresses) { (record:Dictionary<String,String>, entity:Address) in
+            populateAddress(schoolData: record, address: entity)
+        }
+    }
+    
+    func importSATResults(satResults:JSONRecords, ctx:NSManagedObjectContext) throws {
+        try genericInsert(ctx: ctx, records: satResults) { (record:Dictionary<String,String>, entity:SATResult) in
+            populateSAT(satData: record, sat: entity)
+        }
+    }
+    
+    func establishRelationship<T>(ctx:NSManagedObjectContext, entityType:T.Type, relKey:String) throws where T:NSManagedObject {
+        let entityName="\(entityType)"
+        let childFR=NSFetchRequest<T>(entityName: entityName)
+        childFR.propertiesToFetch=["dbn"]
+        
+        try ctx.fetch(childFR).forEach { child in
+            guard let dbn=child.value(forKey:"dbn") as? String else {
+                os_log(.error, "Missing dbn property for %@", entityName)
                 return
             }
-
-            fReq.predicate=NSPredicate(format: "dbn=%@", dbn)
-            if let hs=(try? moc.persistentStoreCoordinator?.execute(fReq, with: moc) as? Array<HighSchool>)?.first {
-                hs.address=insertAddress(schoolData: school)
+            
+            let fr=NSFetchRequest<HighSchool>(entityName: "HighSchool")
+            fr.predicate=NSPredicate(format: "dbn=%@", argumentArray: [dbn])
+            
+            do {
+                guard let hs=try ctx.fetch(fr).first else {
+                    os_log(.error, "Could not find school for %@ at: %@", entityName, dbn)
+                    return
+                }
+                hs.setValue(child, forKey: relKey)
+            }
+            catch {
+                os_log(.error, "%@", error as NSError)
             }
         }
     }
     
-    @discardableResult
-    func insertAddress(schoolData:Dictionary<String, String>, ctx:NSManagedObjectContext? = nil)->Address {
-        let address=NSEntityDescription.insertNewObject(forEntityName: "Address", into: ctx ?? moc) as! Address
-        populateAddress(schoolData: schoolData, address: address)
-        return address
-    }
-    
-    @discardableResult
-    func insertSATResult(satData:Dictionary<String, String>) -> SATResult {
-        let satResults=NSEntityDescription.insertNewObject(forEntityName: "SATResult", into: moc) as! SATResult
-        populateSAT(satData: satData, sat: satResults)
+    func genericInsert<T>(ctx:NSManagedObjectContext,records:JSONRecords, populator:@escaping(Dictionary<String,String>,T)->())  throws where T:NSManagedObject {
         
-        return satResults
-    }
-
-    func batchInsertSATResults(satData:Array<Dictionary<String, String>>) {
-        if #available(iOS 14.0, *) {
-            var i=0
-            let req=NSBatchInsertRequest(entityName: "SATResult", managedObjectHandler: {[satData] satResult in
-                let satResults:SATResult=satResult as! SATResult
-                populateSAT(satData: satData[i], sat: satResults)
+        let entityName:String="\(T.self)"
+        if #available(iOS 14.0, *), batchProcess {
+            var iter=records.makeIterator()
+            let req=NSBatchInsertRequest(entityName: entityName, managedObjectHandler: {managedObject in
+                guard let record=iter.next() else {return true}
+                let entity:T=managedObject as! T
                 
-                i += 1
-                return i >= satData.count
+                let _ = populator(record,entity)
+                return false
             })
+            req.resultType = .statusOnly
             do {
-                try moc.execute(req)
+                try ctx.execute(req)
+                #if DEBUG
+                let count=try ctx.count(for:NSFetchRequest<T>(entityName: entityName))
+                os_log(.debug,"%@","Inserted \(count) \(entityName) records")
+                #endif
             } catch {
-                os_log(.error, "%@", "\(error)")
+                os_log(.error, "Threw error inserting new $@ records: %@", entityName, "\(error)")
+                throw error
             }
         } else {
-            satData.forEach { satResult in
-                insertSATResult(satData: satResult)
+            records.forEach { address in
+                let entity=NSEntityDescription.insertNewObject(forEntityName: entityName, into: ctx) as! T
+                populator(address,entity)
+            }
+        }
+    }
+    
+    func deleteAllHSData(ctx:NSManagedObjectContext, batch:Bool=false) throws {
+        let entities=["HighSchool"]//,"SATResult","Address"]
+        try entities.forEach { entity in
+            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entity)
+            if batch {
+                let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+                batchDeleteRequest.resultType = .resultTypeCount
+                do {
+                    let result=try ctx.execute(batchDeleteRequest)
+                    if let rowsDeleted=(result as! NSBatchDeleteResult).result as? NSNumber {
+                        os_log(.debug,"%@, %@ rows deleted", rowsDeleted,entity)
+                    }
+                } catch {
+                    os_log(.error, "%@", error as NSError)
+                    throw error
+                }
+            } else {
+                try ctx.fetch(fetchRequest).forEach { hs in
+                    ctx.delete(hs as! NSManagedObject)
+                }
             }
         }
     }
 }
-    
-    

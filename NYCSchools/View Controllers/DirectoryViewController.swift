@@ -84,6 +84,7 @@ class DirectoryViewController: UIViewController {
             if case .none = sortByFilterBy {
                 schoolsFetchedResultsContoller = fetchedResultsController(defaultFetchRequest())
             } else {
+                //FIXME: Probably don't have to get a new frc just to change the predicate...
                 let sfr=schoolsFetchedResultsContoller.fetchRequest
                 sfr.sortDescriptors=sortByFilterBy!.sortAscending ? ascendingSort:descendingSort
                 if let b=sortByFilterBy?.filterByBorough {
@@ -116,8 +117,8 @@ class DirectoryViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(refreshDataAfertMOCUpdate(sender:)),
-                                               name: .NSManagedObjectContextObjectsDidChange,
+                                               selector: #selector(refreshDataAfterMOCUpdate(sender:)),
+                                               name: .NSManagedObjectContextDidMergeChangesObjectIDs,
                                                object: (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext)
         self.setupToolbar()
         do {
@@ -172,6 +173,14 @@ class DirectoryViewController: UIViewController {
                 items.append(UIBarButtonItem(barButtonSystemItem: .search, target: self, action: #selector(search(sender:))))
             }
             
+            if #available(iOS 13.0, *) {
+                let bbi=UIBarButtonItem(image: UIImage(systemName: "star.circle"), style: .plain, target: self, action: #selector(filterByTopSAT(sender:)))
+                bbi.possibleTitles=["Top SAT"]
+                items.append(bbi)
+            } else {
+                items.append(UIBarButtonItem(title: "Top SAT", style: .plain, target: self, action: #selector(filterByTopSAT(sender:))))
+            }
+            
             return items
         }(), animated: false)
     }
@@ -219,10 +228,19 @@ class DirectoryViewController: UIViewController {
         })
     }
     
+    @objc
+    func filterByTopSAT(sender:UIControl){
+        let foo=NSPredicate(format: "SUBQUERY(satResults, $x, $x.dbn == self.dbn).@count>0")
+        self.schoolsFetchedResultsContoller.fetchRequest.predicate=foo
+        
+        try! self.schoolsFetchedResultsContoller.performFetch()
+        self.highSchools.reloadData()
+    }
+    
     //MARK: - Handling changes in the context
     //FIXME: Change this to "reload in response to changes in context"
     @objc
-    func refreshDataAfertMOCUpdate(sender:NSNotification){
+    func refreshDataAfterMOCUpdate(sender:NSNotification){
         //This is called via notifications that the managed object context has persisted changes
         //which may not occur on the main thread.
         DispatchQueue.main.async {
