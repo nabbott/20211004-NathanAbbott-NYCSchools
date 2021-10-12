@@ -94,6 +94,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     //in debug mode that the user will trigger an additional load before the default load has completed.
     func clearAndReloadData(){
         let bgCtx=persistentContainer.newBackgroundContext()
+        //Note: The context did save notification is only sent because the updating
+        //of relationships occurs through the context instead of directly via the SQLite store.
+        //If the bg context doesn't have at least one save the notification won't fire and the
+        //main context won't see the changes and neither will the user.
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(mergeContextsAfterReload(sender:)),
                                                name: .NSManagedObjectContextDidSave,
