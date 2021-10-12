@@ -77,11 +77,6 @@ class DetailViewController:UIViewController {
     }
     
     func setupSATScores(){
-//        guard let results=highschool?.value(forKey: "satResults") as? NSArray else {
-//            os_log(.debug, "Could not get SAT results")
-//            return
-//        }
-        
         guard let satResult=highschool?.satResults else {
             mathScores.text="Results Unavailable"
             readingScores.text="Results Unavailable"
