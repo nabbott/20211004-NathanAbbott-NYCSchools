@@ -34,8 +34,9 @@ func defaultFetchRequest()->NSFetchRequest<HighSchool> {
     
     request.resultType = .managedObjectResultType
     request.sortDescriptors=ascendingSort
-    request.propertiesToFetch=["schoolName","address"]
-    request.relationshipKeyPathsForPrefetching=["address"]
+    
+    request.propertiesToFetch=["schoolName","address","satResults"]
+    request.relationshipKeyPathsForPrefetching=["address","satResults"]
     request.returnsObjectsAsFaults=false
     
     return request
@@ -230,7 +231,7 @@ class DirectoryViewController: UIViewController {
     
     @objc
     func filterByTopSAT(sender:UIControl){
-        let foo=NSPredicate(format: "SUBQUERY(satResults, $x, $x.dbn == self.dbn).@count>0")
+        let foo=NSPredicate(format: "SUBQUERY(satResults, $x, ($x.satMathAvgScore+$x.satCriticalReadingAvgScore+$x.satWritingAvgScore)/3 >= 500).@count>0")
         self.schoolsFetchedResultsContoller.fetchRequest.predicate=foo
         
         try! self.schoolsFetchedResultsContoller.performFetch()
@@ -291,8 +292,20 @@ extension DirectoryViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell=tableView.dequeueReusableCell(withIdentifier:"HSName", for:indexPath) as! HSTableCellView
-        cell.name.text = self.schoolsFetchedResultsContoller.object(at: indexPath).schoolName ?? "Not Available"
+        let cell=tableView.dequeueReusableCell(withIdentifier:"HSName", for:indexPath)
+        
+        let school=self.schoolsFetchedResultsContoller.object(at: indexPath)
+        if #available(iOS 14, *) {
+            var config=cell.defaultContentConfiguration()
+            config.text=school.schoolName ?? "Not Available"
+            if let sat=school.satResults, (sat.satMathAvgScore+sat.satCriticalReadingAvgScore+sat.satWritingAvgScore)/3 >= 500 {
+                config.image=UIImage(systemName: "star.fill")
+            }
+            cell.contentConfiguration=config
+        } else {
+            cell.textLabel!.text = school.schoolName ?? "Not Available"
+        }
+        
         return cell
     }
 }
