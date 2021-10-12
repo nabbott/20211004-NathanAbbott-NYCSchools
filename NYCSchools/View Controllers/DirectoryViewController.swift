@@ -43,6 +43,11 @@ func defaultFetchRequest()->NSFetchRequest<HighSchool> {
 }
 
 fileprivate
+func topSATPredicate()->NSPredicate {
+    return NSPredicate(format: "SUBQUERY(satResults, $x, ($x.satMathAvgScore+$x.satCriticalReadingAvgScore+$x.satWritingAvgScore)/3 >= 500).@count>0")
+}
+
+fileprivate
 func searchFetchRequest(_ searchText:String, fetchReq:NSFetchRequest<HighSchool>? = nil)->NSFetchRequest<HighSchool> {
     let req=fetchReq ?? defaultFetchRequest()
     guard searchText.count >  0 else {
@@ -85,7 +90,6 @@ class DirectoryViewController: UIViewController {
             if case .none = sortByFilterBy {
                 schoolsFetchedResultsContoller = fetchedResultsController(defaultFetchRequest())
             } else {
-                //FIXME: Probably don't have to get a new frc just to change the predicate...
                 let sfr=schoolsFetchedResultsContoller.fetchRequest
                 sfr.sortDescriptors=sortByFilterBy!.sortAscending ? ascendingSort:descendingSort
                 if let b=sortByFilterBy?.filterByBorough {
@@ -106,6 +110,7 @@ class DirectoryViewController: UIViewController {
     lazy var schoolsFetchedResultsContoller = fetchedResultsController(defaultFetchRequest()) {
         didSet {
             do {
+                //FIXME: Prolly not necessary to redo the fetch all the time.
                 try schoolsFetchedResultsContoller.performFetch()
                 self.highSchools.reloadData()
             } catch {
@@ -213,6 +218,19 @@ class DirectoryViewController: UIViewController {
         present(filterController, animated: true, completion: nil)
     }
     
+    //FIXME: Probably a better way to deal with this than checking the predicate format
+    @objc
+    func filterByTopSAT(sender:UIControl){
+        let fr=self.schoolsFetchedResultsContoller.fetchRequest
+        let predicate=fr.predicate
+        if let p=predicate, p.predicateFormat.starts(with: "SUBQUERY") {
+            fr.predicate=nil
+        } else {
+            fr.predicate=topSATPredicate()
+        }
+        self.schoolsFetchedResultsContoller=fetchedResultsController(fr)
+    }
+    
     @objc
     func search(sender:UIControl){
         searchBar.text=nil
@@ -227,15 +245,6 @@ class DirectoryViewController: UIViewController {
         UIView.animate(withDuration: view.defaultAnimationDuration, animations: {
             self.resetSearchViews()
         })
-    }
-    
-    @objc
-    func filterByTopSAT(sender:UIControl){
-        let foo=NSPredicate(format: "SUBQUERY(satResults, $x, ($x.satMathAvgScore+$x.satCriticalReadingAvgScore+$x.satWritingAvgScore)/3 >= 500).@count>0")
-        self.schoolsFetchedResultsContoller.fetchRequest.predicate=foo
-        
-        try! self.schoolsFetchedResultsContoller.performFetch()
-        self.highSchools.reloadData()
     }
     
     //MARK: - Handling changes in the context
@@ -316,9 +325,9 @@ extension DirectoryViewController: UITableViewDelegate {
 
 //MARK: - Search Handlers
 extension DirectoryViewController:UISearchBarDelegate {
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        os_log(.debug,"Search text did change")
-    }
+//    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+//        os_log(.debug,"Search text did change")
+//    }
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         defer {
