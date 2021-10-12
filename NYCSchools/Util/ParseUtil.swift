@@ -193,8 +193,6 @@ func populateSAT(satData:Dictionary<String, String>, sat:SATResult){
 //MARK: - The data import engine. Parses a data object containing JSON.
 typealias JSONRecords = Array<Dictionary<String,String>>
 class HSDataImporter {
-//    private let moc:NSManagedObjectContext
-//    private let includeChildEntities:Bool
     
     private let batchProcess:Bool
     init(batchProcess:Bool=false) {
@@ -239,6 +237,12 @@ class HSDataImporter {
         }
     }
     
+    /// Batch inserts do not allow for maintenance of relationships so we establish those here.
+    /// - Parameters:
+    ///   - ctx: The context via which all changes are occuring
+    ///   - entityType: The type of child entity: SATResult | Address
+    ///   - relKey: The name of the relationship property on the parent entity
+    /// - Throws: An error if something goes wrong - probably with CoreData
     func establishRelationship<T>(ctx:NSManagedObjectContext, entityType:T.Type, relKey:String) throws where T:NSManagedObject {
         let entityName="\(entityType)"
         let childFR=NSFetchRequest<T>(entityName: entityName)
@@ -266,6 +270,12 @@ class HSDataImporter {
         }
     }
     
+    /// Genericized version of the insert routine. The data model is simple enough that this works for all entities
+    /// - Parameters:
+    ///   - ctx: The managed object context
+    ///   - records: The json data containing the data for each entity
+    ///   - populator: A custom delegate routine that takes data from the JSON array and writes it into the new entity
+    /// - Returns: No return value
     func genericInsert<T>(ctx:NSManagedObjectContext,records:JSONRecords, populator:@escaping(Dictionary<String,String>,T)->())  throws where T:NSManagedObject {
         
         let entityName:String="\(T.self)"
@@ -298,7 +308,9 @@ class HSDataImporter {
     }
     
     func deleteAllHSData(ctx:NSManagedObjectContext, batch:Bool=false) throws {
-        let entities=["HighSchool"]//,"SATResult","Address"]
+        //NOTE: SAT results and high schools are from different files and years so not
+        //all sat results will cascade delete with the high school
+        let entities=["HighSchool","SATResult"]//,"Address"]
         try entities.forEach { entity in
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entity)
             if batch {
