@@ -11,51 +11,84 @@ import CoreData
 import os
 import Dispatch
 
+//MARK - Data types for filtering
 struct SortByFilterBy {
-    var sortAscending:Bool
-    var filterByBorough:[String]?
+    static let boroughs=["All","Bronx","Brooklyn","Manhattan","Queens","Staten Is"]
+    
+    enum SortOrder {
+        case asc, desc
+        
+        var sortDescriptors:[NSSortDescriptor] {
+            var isAsc=true
+            if case .desc = self {
+                isAsc=false
+            }
+            
+            return [
+                NSSortDescriptor(key: "address.borough", ascending: isAsc),
+                NSSortDescriptor(key: "schoolName", ascending: isAsc)
+            ]
+        }
+    }
+    
+    var sortOrder:SortOrder = .asc
+    var borough:String?
+    var minCombinedSAT:Int=0
+    
+    var description:String {
+        var desc="Borough: \(borough ?? "All")"
+        if minCombinedSAT > 0 {
+            desc.append(", SAT >= \(minCombinedSAT)")
+        }
+        
+        desc.append(", order: ")
+        if case .asc = sortOrder {
+            desc.append("asc")
+        } else {
+            desc.append("desc")
+        }
+        
+        
+        return desc
+    }
+    
+    var predicate:NSPredicate? {
+        var predicate:NSPredicate?
+        if let borough=borough?.uppercased() {
+            predicate=NSPredicate(format: "address.borough=%@", borough)
+        }
+        
+        if minCombinedSAT > 0 {
+            let sat="$s.satMathAvgScore+$s.satCriticalReadingAvgScore"
+            let satPredicate=NSPredicate(format: "SUBQUERY(satResults, $s, (\(sat)) > %@).@count > 0", NSNumber(value: minCombinedSAT))
+            
+            if let p=predicate {
+                predicate=NSCompoundPredicate(andPredicateWithSubpredicates: [satPredicate,p])
+            } else {
+                predicate=satPredicate
+            }
+        }
+        return predicate
+    }
 }
 
-fileprivate
-let ascendingSort:[NSSortDescriptor]=[
-    NSSortDescriptor(key: "address.borough", ascending: true),
-    NSSortDescriptor(key: "schoolName", ascending: true)
-]
 
-fileprivate
-let descendingSort:[NSSortDescriptor]=[
-    NSSortDescriptor(key: "address.borough", ascending: false),
-    NSSortDescriptor(key: "schoolName", ascending: false)
-]
+//MARK: - Fetch requests and predicates
+
+let topSATPredication=NSPredicate(format: "SUBQUERY(satResults, $x, ($x.satMathAvgScore+$x.satCriticalReadingAvgScore+$x.satWritingAvgScore)/3 >= 500).@count>0")
 
 fileprivate
 func defaultFetchRequest()->NSFetchRequest<HighSchool> {
     let request:NSFetchRequest<HighSchool>=NSFetchRequest(entityName: "HighSchool")
     
     request.resultType = .managedObjectResultType
-    request.sortDescriptors=ascendingSort
+    request.sortDescriptors=SortByFilterBy.SortOrder.asc.sortDescriptors
     
     request.propertiesToFetch=["schoolName","address","satResults"]
     request.relationshipKeyPathsForPrefetching=["address","satResults"]
     request.returnsObjectsAsFaults=false
     
     return request
-}
-
-fileprivate
-func topSATPredicate()->NSPredicate {
-    return NSPredicate(format: "SUBQUERY(satResults, $x, ($x.satMathAvgScore+$x.satCriticalReadingAvgScore+$x.satWritingAvgScore)/3 >= 500).@count>0")
-}
-
-fileprivate
-func searchFetchRequest(_ searchText:String, fetchReq:NSFetchRequest<HighSchool>? = nil)->NSFetchRequest<HighSchool> {
-    let req=fetchReq ?? defaultFetchRequest()
-    guard searchText.count >  0 else {
-        return  req
-    }
-    
-    req.predicate=NSPredicate(format: "schoolName like[c] %@", "*\(searchText)*")
-    return req
 }
 
 fileprivate
@@ -71,6 +104,7 @@ func fetchedResultsController<E>(_ fetchRequest:NSFetchRequest<E>) -> NSFetchedR
     return frc
 }
 
+//MARK: - View Controller
 class DirectoryViewController: UIViewController {
     @IBOutlet weak var directoryView:UIView!
     @IBOutlet weak var highSchools:UITableView!
@@ -79,43 +113,66 @@ class DirectoryViewController: UIViewController {
     @IBOutlet weak var loadingIndicator:UIActivityIndicatorView!
     @IBOutlet weak var loadingLabel:UILabel!
 
-    
+    //This is exposed when the user wishes to perform a search
     @IBOutlet weak var searchBar:UISearchBar!
     @IBOutlet weak var seachResultsView:UIView!
     @IBOutlet weak var searchText:UILabel!
     
+    //This is exposed when the user wishes to filter the list
+    @IBOutlet weak var filterView:UIView!
+    @IBOutlet weak var filterText:UILabel!
     
+    var searchPredicate:NSPredicate?  {
+        didSet {
+            loadDataAndRefreshTableView()
+        }
+    }
+
+    
+    //This set during the unwind segue from the filter dialog
     var sortByFilterBy:SortByFilterBy? {
         didSet {
-            if case .none = sortByFilterBy {
-                schoolsFetchedResultsContoller = fetchedResultsController(defaultFetchRequest())
-            } else {
-                let sfr=schoolsFetchedResultsContoller.fetchRequest
-                sfr.sortDescriptors=sortByFilterBy!.sortAscending ? ascendingSort:descendingSort
-                if let b=sortByFilterBy?.filterByBorough {
-                    var filterPredicate=NSPredicate(format: "address.borough in %@", b)
-                    if let predicate=sfr.predicate {
-                        filterPredicate=NSCompoundPredicate(andPredicateWithSubpredicates: [filterPredicate,predicate])
-                    }
-                    
-                    sfr.predicate=filterPredicate
-                } else {
-                    sfr.predicate=nil
+            filterText.text=sortByFilterBy?.description
+            if case .some = sortByFilterBy {
+                UIView.animate(withDuration: view.defaultAnimationDuration){
+                    self.filterView.isHidden=false
                 }
-                schoolsFetchedResultsContoller = fetchedResultsController(sfr)
+            } else {
+                resetFilterViews()
             }
+            
+            loadDataAndRefreshTableView()
         }
     }
     
-    lazy var schoolsFetchedResultsContoller = fetchedResultsController(defaultFetchRequest()) {
-        didSet {
-            do {
-                //FIXME: Prolly not necessary to redo the fetch all the time.
-                try schoolsFetchedResultsContoller.performFetch()
-                self.highSchools.reloadData()
-            } catch {
-                os_log(.error, log: .default, "@%", error.localizedDescription)
+    lazy var schoolsFetchedResultsContoller = fetchedResultsController(defaultFetchRequest())
+    
+    //FIXME: Prolly not necessary to redo the fetch all the time.
+    func loadDataAndRefreshTableView(performFetch:Bool=true){
+        do {
+            var predicate:NSPredicate?
+            switch (searchPredicate,sortByFilterBy?.predicate) {
+            case (nil,let filterP?):
+                predicate=filterP
+            case (let searchP?, nil):
+                predicate=searchP
+            case (let searchP?, let filterP?):
+                predicate=NSCompoundPredicate(andPredicateWithSubpredicates: [searchP,filterP])
+            default:
+                break
             }
+            
+            let fetchRequest=schoolsFetchedResultsContoller.fetchRequest
+            fetchRequest.predicate=predicate
+            fetchRequest.sortDescriptors=sortByFilterBy?.sortOrder.sortDescriptors ?? SortByFilterBy.SortOrder.asc.sortDescriptors
+ 
+            if performFetch {
+                try schoolsFetchedResultsContoller.performFetch()
+            }
+            self.highSchools.reloadData()
+        } catch {
+            //FIXME: Flash error screen
+            os_log(.error, log: .default, "@%", error.localizedDescription)
         }
     }
 
@@ -127,14 +184,8 @@ class DirectoryViewController: UIViewController {
                                                name: .NSManagedObjectContextDidMergeChangesObjectIDs,
                                                object: (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext)
         self.setupToolbar()
-        do {
-            try schoolsFetchedResultsContoller.performFetch()
-            self.highSchools.reloadData()
-        } catch {
-            os_log(.error, log: .default, "@%", error.localizedDescription)
-        }
+        loadDataAndRefreshTableView()
     }
-    
     
     override func viewDidAppear(_ animated: Bool) {
         if (UIApplication.shared.delegate as! AppDelegate).isLoadingSchools {
@@ -179,14 +230,6 @@ class DirectoryViewController: UIViewController {
                 items.append(UIBarButtonItem(barButtonSystemItem: .search, target: self, action: #selector(search(sender:))))
             }
             
-            if #available(iOS 13.0, *) {
-                let bbi=UIBarButtonItem(image: UIImage(systemName: "star.circle"), style: .plain, target: self, action: #selector(filterByTopSAT(sender:)))
-                bbi.possibleTitles=["Top SAT"]
-                items.append(bbi)
-            } else {
-                items.append(UIBarButtonItem(title: "Top SAT", style: .plain, target: self, action: #selector(filterByTopSAT(sender:))))
-            }
-            
             return items
         }(), animated: false)
     }
@@ -206,61 +249,80 @@ class DirectoryViewController: UIViewController {
         self.present(alert, animated: true, completion: nil)
     }
     
-    @objc
-    func showMap(sender:UIControl){
-        self.performSegue(withIdentifier: "showLocations", sender: self)
-    }
-    
     //FIXME: Set the borough to the curent setting if there is one
     @objc
     func filter(sender:UIControl){
-        guard let filterController=storyboard?.instantiateViewController(withIdentifier: "filter") else {return}
-        present(filterController, animated: true, completion: nil)
-    }
-    
-    //FIXME: Probably a better way to deal with this than checking the predicate format
-    @objc
-    func filterByTopSAT(sender:UIControl){
-        let fr=self.schoolsFetchedResultsContoller.fetchRequest
-        let predicate=fr.predicate
-        if let p=predicate, p.predicateFormat.starts(with: "SUBQUERY") {
-            fr.predicate=nil
-        } else {
-            fr.predicate=topSATPredicate()
+        guard let fc=storyboard?.instantiateViewController(withIdentifier: "filter") as? FilterViewController else {
+            return
         }
-        self.schoolsFetchedResultsContoller=fetchedResultsController(fr)
+        
+        fc.sortByFilterBy=sortByFilterBy
+        
+        present(fc, animated: true, completion: nil)
     }
     
+    //Target for the unwind segue from the filter dialog
+    @IBAction func returnFromFilterPopup(unwindSegue: UIStoryboardSegue) {}
+    
+    /// Displays the search dialog
+    /// - Parameter sender: The toolbar item
     @objc
     func search(sender:UIControl){
         searchBar.text=nil
         UIView.animate(withDuration: view.defaultAnimationDuration, animations: {self.searchBar.isHidden=false})
     }
     
-    //Target for the unwind segue from the filter dialog
-    @IBAction func returnFromFilterPopup(unwindSegue: UIStoryboardSegue) {}
+    /// Hides the search related dialogs
+    func resetSearchViews(){
+        searchBar.isHidden=true
+        searchBar.text=nil
+        
+        searchText.text=nil
+        seachResultsView.isHidden=true
+    }
+    
+    /// Hides the filter related dialogs
+    func resetFilterViews(){
+        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {
+            self.filterView.isHidden=true
+        })
+    }
     
     @IBAction func showAll(sender:UIControl) {
-        schoolsFetchedResultsContoller=fetchedResultsController(defaultFetchRequest())
+        sortByFilterBy=nil
+        searchPredicate=nil
+        loadDataAndRefreshTableView()
         UIView.animate(withDuration: view.defaultAnimationDuration, animations: {
             self.resetSearchViews()
         })
     }
     
-    //MARK: - Handling changes in the context
-    //FIXME: Change this to "reload in response to changes in context"
-    @objc
-    func refreshDataAfterMOCUpdate(sender:NSNotification){
-        //This is called via notifications that the managed object context has persisted changes
-        //which may not occur on the main thread.
-        DispatchQueue.main.async {
-            self.schoolsFetchedResultsContoller=fetchedResultsController(defaultFetchRequest())
-            
+    /// Removes the search from the table view and hides the search related dialogs
+    /// - Parameter sender: The button that calls this function
+    @IBAction func removeSearch(sender:UIControl){
+        searchPredicate=nil
+        loadDataAndRefreshTableView()
+        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {
             self.resetSearchViews()
-            self.hideLoadingView()
-        }
+        })
     }
     
+    /// Removes the filters from the table view fetch controller and hides the filter related dialogs
+    /// - Parameter sender: The button that calls this function
+    @IBAction func removeFilter(sender:UIControl){
+        sortByFilterBy=nil
+        loadDataAndRefreshTableView()
+        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {
+            self.resetFilterViews()
+        })
+    }
+    
+    @objc
+    func showMap(sender:UIControl){
+        self.performSegue(withIdentifier: "showLocations", sender: self)
+    }
+    
+    //MARK: - Loading Dialog
     func showLoadingView(){
         UIView.animate(withDuration: view.defaultAnimationDuration, animations: {[unowned self] in
             self.loadingIndicator.startAnimating()
@@ -277,15 +339,21 @@ class DirectoryViewController: UIViewController {
         })
     }
     
-    func resetSearchViews(){
-        searchBar.isHidden=true
-        searchBar.text=nil
-        
-        searchText.text=nil
-        seachResultsView.isHidden=true
+    //MARK: - Handling changes in the context
+    @objc
+    func refreshDataAfterMOCUpdate(sender:NSNotification){
+        //This is called via notifications that the managed object context has persisted changes
+        //which may not occur on the main thread.
+        DispatchQueue.main.async {
+            self.loadDataAndRefreshTableView()
+            
+            self.resetSearchViews()
+            self.hideLoadingView()
+        }
     }
 }
 
+//MARK: - Table View Datasource Extension
 extension DirectoryViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
         return self.schoolsFetchedResultsContoller.sections?.count ?? 0
@@ -319,16 +387,13 @@ extension DirectoryViewController: UITableViewDataSource {
     }
 }
 
+//MARK: - Table View Delegate
 extension DirectoryViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {}
 }
 
-//MARK: - Search Handlers
+//MARK: - Search Bar Delegate
 extension DirectoryViewController:UISearchBarDelegate {
-//    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-//        os_log(.debug,"Search text did change")
-//    }
-    
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         defer {
             searchBar.resignFirstResponder()
@@ -340,39 +405,48 @@ extension DirectoryViewController:UISearchBarDelegate {
         }
         
         guard let sText=searchBar.text, !sText.isEmpty else {
+            searchPredicate=nil
             return
         }
         
-        let searchFR=searchFetchRequest(sText, fetchReq: schoolsFetchedResultsContoller.fetchRequest)
-        self.schoolsFetchedResultsContoller=fetchedResultsController(searchFR)
+        searchPredicate=NSPredicate(format: "schoolName like[c] %@", "*\(sText)*")
     }
 }
 
 //MARK: - Segue Handlers
 extension DirectoryViewController {
+    
+    func segueToDetail(_ segue: UIStoryboardSegue){
+        guard let selectedIndex=self.highSchools.indexPathForSelectedRow else {
+            return
+        }
+        
+        let oid=self.schoolsFetchedResultsContoller.object(at: selectedIndex).objectID
+        
+        if let destination=segue.destination as? DetailViewController {
+            let moc=(UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+            let hs=moc.object(with: oid) as! HighSchool
+            destination.highschool=hs
+        }
+    }
+    
+    func segueToMap(_ segue: UIStoryboardSegue){
+        if let destination=segue.destination as? LocationViewController {
+            let fr=schoolsFetchedResultsContoller.fetchRequest.copy() as! NSFetchRequest<HighSchool>
+            fr.resultType = .managedObjectResultType
+            fr.relationshipKeyPathsForPrefetching=["address"]
+            
+            let results=try! (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext.fetch(fr)
+            destination.highSchools.append(contentsOf: results)
+        }
+    }
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         switch segue.identifier {
         case "detail":
-            guard let selectedIndex=self.highSchools.indexPathForSelectedRow else {
-                return
-            }
-            
-            let oid=self.schoolsFetchedResultsContoller.object(at: selectedIndex).objectID
-            
-            if let destination=segue.destination as? DetailViewController {
-                let moc=(UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
-                let hs=moc.object(with: oid) as! HighSchool
-                destination.highschool=hs
-            }
+            segueToDetail(segue)
         case "showLocations":
-            if let destination=segue.destination as? LocationViewController {
-                let fr=schoolsFetchedResultsContoller.fetchRequest.copy() as! NSFetchRequest<HighSchool>
-                fr.resultType = .managedObjectResultType
-                fr.relationshipKeyPathsForPrefetching=["address"]
-                
-                let results=try! (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext.fetch(fr)
-                destination.highSchools.append(contentsOf: results)
-            }
+            segueToMap(segue)
         default:
             return
         }

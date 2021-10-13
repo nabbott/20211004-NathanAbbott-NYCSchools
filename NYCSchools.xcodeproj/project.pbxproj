@@ -235,11 +235,11 @@
 		8B5DA6B5270933930096C07A /* View Controllers */ = {
 			isa = PBXGroup;
 			children = (
-				8B9AA8AC270AA44100874298 /* WebsiteViewController.swift */,
-				8BBB1BC7270D67B100869150 /* FilterViewController.swift */,
-				8B9AA8F3270AB22F00874298 /* LocationViewController.swift */,
 				8B5DA6B92709350F0096C07A /* DetailViewController.swift */,
 				8B1585F12707E232007EE576 /* DirectoryViewController.swift */,
+				8BBB1BC7270D67B100869150 /* FilterViewController.swift */,
+				8B9AA8F3270AB22F00874298 /* LocationViewController.swift */,
+				8B9AA8AC270AA44100874298 /* WebsiteViewController.swift */,
 			);
 			path = "View Controllers";
 			sourceTree = "<group>";

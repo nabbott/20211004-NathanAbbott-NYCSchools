@@ -108,7 +108,7 @@
                                                                             </userDefinedRuntimeAttribute>
                                                                         </userDefinedRuntimeAttributes>
                                                                         <connections>
-                                                                            <action selector="showAllWithSender:" destination="eFM-H8-vbL" eventType="touchUpInside" id="CYb-xY-3MO"/>
+                                                                            <action selector="removeSearchWithSender:" destination="eFM-H8-vbL" eventType="touchUpInside" id="MLB-rI-bTh"/>
                                                                         </connections>
                                                                     </button>
                                                                 </subviews>
@@ -120,6 +120,50 @@
                                                             <constraint firstAttribute="bottom" secondItem="lxW-I0-HIQ" secondAttribute="bottom" constant="20" symbolic="YES" id="Jrj-SH-MGe"/>
                                                             <constraint firstItem="lxW-I0-HIQ" firstAttribute="leading" secondItem="N69-F2-Uub" secondAttribute="leading" constant="20" symbolic="YES" id="XqP-MM-shy"/>
                                                             <constraint firstItem="lxW-I0-HIQ" firstAttribute="top" secondItem="N69-F2-Uub" secondAttribute="top" constant="20" symbolic="YES" id="fXo-bJ-GAD"/>
+                                                        </constraints>
+                                                    </view>
+                                                    <view hidden="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="mpB-3G-Jwj" userLabel="Filter Controls Container">
+                                                        <rect key="frame" x="0.0" y="80.666666666666671" width="414" height="40"/>
+                                                        <subviews>
+                                                            <stackView opaque="NO" contentMode="scaleToFill" spacingType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="h04-84-42k" userLabel="Filter Results control">
+                                                                <rect key="frame" x="20" y="19.999999999999986" width="374" height="0.0"/>
+                                                                <subviews>
+                                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Filter:" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TFk-ef-hUW" userLabel="Filter">
+                                                                        <rect key="frame" x="0.0" y="0.0" width="43.333333333333336" height="0.0"/>
+                                                                        <fontDescription key="fontDescription" type="italicSystem" pointSize="17"/>
+                                                                        <nil key="textColor"/>
+                                                                        <nil key="highlightedColor"/>
+                                                                    </label>
+                                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalHuggingPriority="251" text="Label" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wOl-6s-DSP" userLabel="Filter Text">
+                                                                        <rect key="frame" x="51.333333333333343" y="0.0" width="284.66666666666663" height="0.0"/>
+                                                                        <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                                                        <nil key="textColor"/>
+                                                                        <nil key="highlightedColor"/>
+                                                                    </label>
+                                                                    <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" horizontalCompressionResistancePriority="749" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="60M-K2-8Ro" userLabel="Show All">
+                                                                        <rect key="frame" x="344" y="0.0" width="30" height="0.0"/>
+                                                                        <color key="backgroundColor" systemColor="systemTealColor"/>
+                                                                        <state key="normal" title="All">
+                                                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                                        </state>
+                                                                        <userDefinedRuntimeAttributes>
+                                                                            <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                                                                <integer key="value" value="5"/>
+                                                                            </userDefinedRuntimeAttribute>
+                                                                        </userDefinedRuntimeAttributes>
+                                                                        <connections>
+                                                                            <action selector="removeFilterWithSender:" destination="eFM-H8-vbL" eventType="touchUpInside" id="oTU-Yr-TKn"/>
+                                                                        </connections>
+                                                                    </button>
+                                                                </subviews>
+                                                            </stackView>
+                                                        </subviews>
+                                                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                                        <constraints>
+                                                            <constraint firstItem="h04-84-42k" firstAttribute="top" secondItem="mpB-3G-Jwj" secondAttribute="top" constant="20" symbolic="YES" id="3UU-8u-H7M"/>
+                                                            <constraint firstAttribute="bottom" secondItem="h04-84-42k" secondAttribute="bottom" constant="20" symbolic="YES" id="9WH-dL-a3V"/>
+                                                            <constraint firstItem="h04-84-42k" firstAttribute="leading" secondItem="mpB-3G-Jwj" secondAttribute="leading" constant="20" symbolic="YES" id="Kec-n9-PTf"/>
+                                                            <constraint firstAttribute="trailing" secondItem="h04-84-42k" secondAttribute="trailing" constant="20" symbolic="YES" id="M7Y-aC-nCc"/>
                                                         </constraints>
                                                     </view>
                                                     <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="psJ-nb-MdE">
@@ -184,6 +228,8 @@
                     </navigationItem>
                     <connections>
                         <outlet property="directoryView" destination="l4c-7s-UmW" id="jGB-5z-q0O"/>
+                        <outlet property="filterText" destination="wOl-6s-DSP" id="sJC-uG-DQd"/>
+                        <outlet property="filterView" destination="mpB-3G-Jwj" id="VFP-2Q-Xhy"/>
                         <outlet property="highSchools" destination="psJ-nb-MdE" id="7QZ-N4-aLa"/>
                         <outlet property="loadingIndicator" destination="EmR-wF-6qf" id="Fw3-O5-IoO"/>
                         <outlet property="loadingIndicatorView" destination="NJz-y9-G90" id="Y7G-At-2Tc"/>
@@ -555,52 +601,104 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="736"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" distribution="fillProportionally" alignment="center" spacingType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="0kQ-wK-xUf">
-                                <rect key="frame" x="0.0" y="20" width="414" height="696"/>
+                            <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="center" spacingType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="0kQ-wK-xUf">
+                                <rect key="frame" x="20" y="20" width="374" height="696"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Filter" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="7ib-E2-eyX">
-                                        <rect key="frame" x="188" y="0.0" width="38" height="20.666666666666668"/>
+                                        <rect key="frame" x="168" y="0.0" width="38" height="20.333333333333332"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <pickerView contentMode="scaleToFill" horizontalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="4dX-Gd-w4W">
-                                        <rect key="frame" x="47" y="28.666666666666671" width="320" height="220.33333333333331"/>
-                                        <connections>
-                                            <outlet property="dataSource" destination="7uF-GJ-Mf7" id="Zai-Hd-TgS"/>
-                                            <outlet property="delegate" destination="7uF-GJ-Mf7" id="sur-ZT-a2O"/>
-                                        </connections>
-                                    </pickerView>
+                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="center" spacing="7" translatesAutoresizingMaskIntoConstraints="NO" id="ebS-ze-cxp" userLabel="Borough">
+                                        <rect key="frame" x="27" y="28.333333333333329" width="320" height="243.33333333333337"/>
+                                        <subviews>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="By Borough" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ECM-8E-AgG" userLabel="By Borough">
+                                                <rect key="frame" x="115.66666666666666" y="0.0" width="88.666666666666657" height="20.333333333333332"/>
+                                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                <nil key="textColor"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
+                                            <pickerView contentMode="scaleToFill" horizontalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="4dX-Gd-w4W">
+                                                <rect key="frame" x="0.0" y="27.333333333333343" width="320" height="216"/>
+                                                <connections>
+                                                    <outlet property="dataSource" destination="7uF-GJ-Mf7" id="Zai-Hd-TgS"/>
+                                                    <outlet property="delegate" destination="7uF-GJ-Mf7" id="sur-ZT-a2O"/>
+                                                </connections>
+                                            </pickerView>
+                                        </subviews>
+                                    </stackView>
+                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacingType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="P33-mK-IBM" userLabel="SAT">
+                                        <rect key="frame" x="0.0" y="279.66666666666669" width="374" height="233.00000000000006"/>
+                                        <subviews>
+                                            <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacingType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="xPW-Yb-gsu">
+                                                <rect key="frame" x="0.0" y="0.0" width="374" height="195"/>
+                                                <subviews>
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Min Combined SAT" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xCZ-W3-Ba4" userLabel="Combined SAT">
+                                                        <rect key="frame" x="0.0" y="87.333333333333314" width="355.66666666666669" height="20.333333333333329"/>
+                                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                        <nil key="textColor"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="0" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="jtw-CQ-OxV" userLabel="Score">
+                                                        <rect key="frame" x="363.66666666666669" y="87.333333333333314" width="10.333333333333314" height="20.333333333333329"/>
+                                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                        <nil key="textColor"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
+                                                </subviews>
+                                            </stackView>
+                                            <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" minValue="0.0" maxValue="1600" translatesAutoresizingMaskIntoConstraints="NO" id="L89-s7-qbt">
+                                                <rect key="frame" x="-2" y="203" width="378" height="31"/>
+                                                <connections>
+                                                    <action selector="satSliderDraggedWithSender:" destination="7uF-GJ-Mf7" eventType="touchDragInside" id="Bdg-s5-FXc"/>
+                                                </connections>
+                                            </slider>
+                                        </subviews>
+                                    </stackView>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Order" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="qkZ-DX-wCm" userLabel="Order">
+                                        <rect key="frame" x="165" y="520.66666666666663" width="44" height="20.333333333333371"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
                                     <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="T6l-Xm-1gd">
-                                        <rect key="frame" x="156.66666666666666" y="257" width="100.99999999999997" height="32.666666666666686"/>
+                                        <rect key="frame" x="136.66666666666666" y="549" width="101" height="32"/>
                                         <segments>
                                             <segment title="Asc"/>
                                             <segment title="Desc"/>
                                         </segments>
                                     </segmentedControl>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ynZ-oV-Bsv" userLabel="Spacer">
-                                        <rect key="frame" x="0.0" y="296.66666666666674" width="414" height="372.33333333333326"/>
+                                        <rect key="frame" x="0.0" y="588" width="374" height="50"/>
                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                     </view>
-                                    <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="19" translatesAutoresizingMaskIntoConstraints="NO" id="v25-AF-GBe">
-                                        <rect key="frame" x="16.333333333333343" y="677" width="381.66666666666663" height="19"/>
+                                    <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="19" translatesAutoresizingMaskIntoConstraints="NO" id="v25-AF-GBe" userLabel="Page Controls">
+                                        <rect key="frame" x="19.666666666666657" y="646" width="335" height="50"/>
                                         <subviews>
                                             <view contentMode="scaleToFill" verticalHuggingPriority="249" translatesAutoresizingMaskIntoConstraints="NO" id="4T1-PJ-MsR" userLabel="Spacer">
-                                                <rect key="frame" x="0.0" y="0.0" width="269.66666666666669" height="19"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="149" height="50"/>
                                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                             </view>
                                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="otY-7Y-vB4">
-                                                <rect key="frame" x="288.66666666666669" y="0.0" width="35" height="19"/>
+                                                <rect key="frame" x="168" y="0.0" width="35" height="50"/>
                                                 <state key="normal" title="Filter"/>
                                                 <connections>
-                                                    <segue destination="403-Cb-6ih" kind="unwind" unwindAction="returnFromFilterPopupWithUnwindSegue:" id="wqF-Li-DcS"/>
+                                                    <segue destination="403-Cb-6ih" kind="unwind" unwindAction="returnFromFilterPopupWithUnwindSegue:" id="SaL-CO-S9H"/>
                                                 </connections>
                                             </button>
-                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ovc-qn-GYH" userLabel="Cancel">
-                                                <rect key="frame" x="342.66666666666669" y="0.0" width="39" height="19"/>
-                                                <state key="normal" title="Close"/>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="c6x-sZ-Sby" userLabel="Reset">
+                                                <rect key="frame" x="222.00000000000003" y="10" width="38.999999999999972" height="30"/>
+                                                <state key="normal" title="Reset"/>
                                                 <connections>
-                                                    <action selector="cancelWithSender:" destination="7uF-GJ-Mf7" eventType="touchUpInside" id="EuH-fV-p1m"/>
+                                                    <action selector="resetWithSender:" destination="7uF-GJ-Mf7" eventType="touchUpInside" id="9NL-w4-i0t"/>
+                                                </connections>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ovc-qn-GYH">
+                                                <rect key="frame" x="280" y="10" width="55" height="30"/>
+                                                <state key="normal" title="Remove"/>
+                                                <connections>
+                                                    <segue destination="403-Cb-6ih" kind="unwind" unwindAction="returnFromFilterPopupWithUnwindSegue:" id="ubx-xW-67C"/>
                                                 </connections>
                                             </button>
                                         </subviews>
@@ -614,16 +712,17 @@
                         <viewLayoutGuide key="safeArea" id="mZG-C9-o9t"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="ynZ-oV-Bsv" firstAttribute="leading" secondItem="mZG-C9-o9t" secondAttribute="leading" id="87p-Hl-YKO"/>
                             <constraint firstItem="0kQ-wK-xUf" firstAttribute="top" secondItem="mZG-C9-o9t" secondAttribute="top" constant="20" id="S3F-Ma-2D6"/>
                             <constraint firstItem="mZG-C9-o9t" firstAttribute="bottom" secondItem="0kQ-wK-xUf" secondAttribute="bottom" constant="20" id="S4W-M3-6Th"/>
-                            <constraint firstItem="mZG-C9-o9t" firstAttribute="trailing" secondItem="0kQ-wK-xUf" secondAttribute="trailing" id="jKx-nk-hF5"/>
-                            <constraint firstItem="mZG-C9-o9t" firstAttribute="trailing" secondItem="ynZ-oV-Bsv" secondAttribute="trailing" id="q99-qT-mMJ"/>
-                            <constraint firstItem="mZG-C9-o9t" firstAttribute="leading" secondItem="0kQ-wK-xUf" secondAttribute="leading" id="wbV-lh-z3Y"/>
+                            <constraint firstItem="mZG-C9-o9t" firstAttribute="trailing" secondItem="0kQ-wK-xUf" secondAttribute="trailing" constant="20" id="jKx-nk-hF5"/>
+                            <constraint firstItem="0kQ-wK-xUf" firstAttribute="leading" secondItem="mZG-C9-o9t" secondAttribute="leading" constant="20" id="wbV-lh-z3Y"/>
                         </constraints>
                     </view>
                     <connections>
                         <outlet property="boroughPicker" destination="4dX-Gd-w4W" id="X2f-nG-3VD"/>
+                        <outlet property="filter" destination="otY-7Y-vB4" id="iPU-Wf-4mX"/>
+                        <outlet property="satScore" destination="jtw-CQ-OxV" id="jui-mT-Jbw"/>
+                        <outlet property="satScoreSlider" destination="L89-s7-qbt" id="cyO-bn-arb"/>
                         <outlet property="sortOrder" destination="T6l-Xm-1gd" id="fu4-YS-r3h"/>
                     </connections>
                 </viewController>
@@ -766,7 +865,7 @@
     </scenes>
     <inferredMetricsTieBreakers>
         <segue reference="IrO-dE-TlF"/>
-        <segue reference="HFF-kx-3xJ"/>
+        <segue reference="T6r-Gd-0ro"/>
     </inferredMetricsTieBreakers>
     <resources>
         <namedColor name="AccentColor">
