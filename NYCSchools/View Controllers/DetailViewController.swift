@@ -31,8 +31,9 @@ class DetailViewController:UIViewController {
     override
     func viewDidLoad() {
         setupToolbar()
-        setupSATScores()
-        setupBasicDetails()
+        populateSATScores()
+        populateAcademics()
+        populateContactInfo()
     }
     
     func setupToolbar(){
@@ -60,12 +61,16 @@ class DetailViewController:UIViewController {
         }(), animated: false)
     }
     
-    func setupBasicDetails(){
+    //MARK: - Populate school info
+    func populateContactInfo(){
         name.text=highschool?.schoolName ?? "Not Available"
         email.text=highschool?.schoolEmail ?? "Not Available"
         phone.text=highschool?.phoneNumber ?? "Not Available"
         fax.text=highschool?.faxNumber ?? "Not Available"
         address.text=highschool?.address?.primaryAddressLine1 ?? "Not Available"
+    }
+    
+    func populateAcademics(){
         
         ap.text=highschool?.advancedPlacementCourses ?? "Not Available"
         language.text=highschool?.languageClasses ?? "Not Available"
@@ -76,7 +81,7 @@ class DetailViewController:UIViewController {
         }
     }
     
-    func setupSATScores(){
+    func populateSATScores(){
         guard let satResult=highschool?.satResults else {
             mathScores.text="Results Unavailable"
             readingScores.text="Results Unavailable"
@@ -89,6 +94,8 @@ class DetailViewController:UIViewController {
         writingScores.text="\(satResult.satWritingAvgScore)"
     }
     
+    
+    //MARK: - Segues
     @objc
     func showWebsite(sender:UIControl){
         self.performSegue(withIdentifier: "website", sender: self)
