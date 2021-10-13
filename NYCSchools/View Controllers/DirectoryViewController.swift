@@ -82,7 +82,9 @@ class DirectoryViewController: UIViewController {
             }
             self.highSchools.reloadData()
         } catch {
-            //FIXME: Flash error screen
+            let alertController=makeSimpleErrorAlert(msg: "An error occured during loading.")
+            present(alertController, animated: true, completion: nil)
+            
             os_log(.error, log: .default, "@%", error.localizedDescription)
         }
     }
@@ -348,10 +350,11 @@ extension DirectoryViewController {
             fr.relationshipKeyPathsForPrefetching=["address"]
             
             do {
-                let results=try! (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext.fetch(fr)
+                let results=try (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext.fetch(fr)
                 destination.highSchools.append(contentsOf: results)
             } catch {
-                
+                let alertController=makeSimpleErrorAlert(msg: "An error occured building the map.")
+                present(alertController, animated: true, completion: nil)
                 
                 os_log(.error,"%@",error as NSError)
             }
