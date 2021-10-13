@@ -9,6 +9,11 @@ This project is a implementation of the NYC Schools coding challenge. The goal w
 ### Extra Features
 - Schools are grouped by borough
 - Schools are displayed on a map
+- Schools with combined math and reading scores are indicated with a star icon
+- Users may perform a simple search (based on the name)
+- Users may filter the list by borough and a min combined SAT score
+- Filters and search criteria are additive and persist for the duration of the session
+- Changes to the list due to searching and filtering are reflected in the map view
 - Additional information such as extra curricular activities and contact information displayed on detail page
 - Users may visit a school's website if available
 - UI supports all modern iOS (v. 13 and up)  devices, including iPad
