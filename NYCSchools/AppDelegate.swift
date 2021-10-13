@@ -10,14 +10,34 @@ import CoreData
 import os
 import Dispatch
 
+func logInstalledFonts(){
+    print("********** BEGIN FONT LOGGING ****************************************************")
+    UIFont.familyNames.forEach { family in
+        UIFont.fontNames(forFamilyName: family).forEach { font in
+            print("Family: \(family), font: \(font)")
+        }
+    }
+    print("********** END FONT LOGGING ******************************************************")
+}
+
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
     var isLoadingSchools=false
     
+    
+    
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        #if DEBUG
+        if CommandLine.arguments.contains("-showFonts"){
+            DispatchQueue.global(qos: .utility).async {
+                logInstalledFonts()
+            }
+        }
+        #endif
+        
         return true
     }
 
