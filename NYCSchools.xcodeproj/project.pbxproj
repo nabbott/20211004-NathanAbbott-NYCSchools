@@ -19,6 +19,8 @@
 		8B3AC81F27115E9F00251887 /* ModelExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3AC81E27115E9F00251887 /* ModelExtensions.swift */; };
 		8B3AC82A271395F600251887 /* DataImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3AC829271395F600251887 /* DataImportTests.swift */; };
 		8B3AC8402713A1A100251887 /* CorruptedSATFile.json in Resources */ = {isa = PBXBuildFile; fileRef = 8B3AC83C27139FAD00251887 /* CorruptedSATFile.json */; };
+		8B3AC86C27178D8700251887 /* SortingAndFiltering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3AC86B27178D8600251887 /* SortingAndFiltering.swift */; };
+		8B3AC87027178DB700251887 /* SortingAndFiltering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3AC86B27178D8600251887 /* SortingAndFiltering.swift */; };
 		8B5DA69327091C710096C07A /* HSlTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B5DA69227091C700096C07A /* HSlTableViewCell.swift */; };
 		8B5DA6A227091DA40096C07A /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B5DA6A127091DA30096C07A /* UIKit.framework */; };
 		8B5DA6BA2709350F0096C07A /* DetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B5DA6B92709350F0096C07A /* DetailViewController.swift */; };
@@ -76,6 +78,7 @@
 		8B3AC81E27115E9F00251887 /* ModelExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelExtensions.swift; sourceTree = "<group>"; };
 		8B3AC829271395F600251887 /* DataImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportTests.swift; sourceTree = "<group>"; };
 		8B3AC83C27139FAD00251887 /* CorruptedSATFile.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = CorruptedSATFile.json; sourceTree = "<group>"; };
+		8B3AC86B27178D8600251887 /* SortingAndFiltering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortingAndFiltering.swift; sourceTree = "<group>"; };
 		8B5DA69227091C700096C07A /* HSlTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HSlTableViewCell.swift; sourceTree = "<group>"; };
 		8B5DA6A127091DA30096C07A /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		8B5DA6B92709350F0096C07A /* DetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewController.swift; sourceTree = "<group>"; };
@@ -248,6 +251,7 @@
 			isa = PBXGroup;
 			children = (
 				8B5DA6E727095DF00096C07A /* ParseUtil.swift */,
+				8B3AC86B27178D8600251887 /* SortingAndFiltering.swift */,
 			);
 			path = Util;
 			sourceTree = "<group>";
@@ -397,6 +401,7 @@
 				8B9AA8AD270AA44100874298 /* WebsiteViewController.swift in Sources */,
 				8B1585F82707E232007EE576 /* NYCSchools.xcdatamodeld in Sources */,
 				8B5DA6E827095DF00096C07A /* ParseUtil.swift in Sources */,
+				8B3AC86C27178D8700251887 /* SortingAndFiltering.swift in Sources */,
 				8B1585F02707E232007EE576 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -415,6 +420,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8B3AC87027178DB700251887 /* SortingAndFiltering.swift in Sources */,
 				8BA11598270FD60E0096D378 /* UIViewAdditions.swift in Sources */,
 				8BA11599270FD60E0096D378 /* FilterViewController.swift in Sources */,
 				8BA1159A270FD60E0096D378 /* LocationViewController.swift in Sources */,
