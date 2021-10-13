@@ -21,6 +21,10 @@
 		8B3AC8402713A1A100251887 /* CorruptedSATFile.json in Resources */ = {isa = PBXBuildFile; fileRef = 8B3AC83C27139FAD00251887 /* CorruptedSATFile.json */; };
 		8B3AC86C27178D8700251887 /* SortingAndFiltering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3AC86B27178D8600251887 /* SortingAndFiltering.swift */; };
 		8B3AC87027178DB700251887 /* SortingAndFiltering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3AC86B27178D8600251887 /* SortingAndFiltering.swift */; };
+		8B3AC8782717918F00251887 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3AC8772717918F00251887 /* Constants.swift */; };
+		8B3AC87D2717928400251887 /* Functions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3AC87C2717928400251887 /* Functions.swift */; };
+		8B3AC8872717936600251887 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3AC8772717918F00251887 /* Constants.swift */; };
+		8B3AC8882717936700251887 /* Functions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3AC87C2717928400251887 /* Functions.swift */; };
 		8B5DA69327091C710096C07A /* HSlTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B5DA69227091C700096C07A /* HSlTableViewCell.swift */; };
 		8B5DA6A227091DA40096C07A /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B5DA6A127091DA30096C07A /* UIKit.framework */; };
 		8B5DA6BA2709350F0096C07A /* DetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B5DA6B92709350F0096C07A /* DetailViewController.swift */; };
@@ -39,8 +43,6 @@
 		8B9AA8C9270AAB4000874298 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8B1585F92707E23F007EE576 /* Assets.xcassets */; };
 		8B9AA8CA270AAB4000874298 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8B1585F32707E232007EE576 /* Main.storyboard */; };
 		8B9AA8FC270AB5DC00874298 /* LocationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B9AA8F3270AB22F00874298 /* LocationViewController.swift */; };
-		8BA11588270FCD800096D378 /* UIViewAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA11587270FCD800096D378 /* UIViewAdditions.swift */; };
-		8BA11598270FD60E0096D378 /* UIViewAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA11587270FCD800096D378 /* UIViewAdditions.swift */; };
 		8BA11599270FD60E0096D378 /* FilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BBB1BC7270D67B100869150 /* FilterViewController.swift */; };
 		8BA1159A270FD60E0096D378 /* LocationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B9AA8F3270AB22F00874298 /* LocationViewController.swift */; };
 		8BA115B1270FD8DC0096D378 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BA115B0270FD8DC0096D378 /* WebKit.framework */; };
@@ -79,6 +81,8 @@
 		8B3AC829271395F600251887 /* DataImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportTests.swift; sourceTree = "<group>"; };
 		8B3AC83C27139FAD00251887 /* CorruptedSATFile.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = CorruptedSATFile.json; sourceTree = "<group>"; };
 		8B3AC86B27178D8600251887 /* SortingAndFiltering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortingAndFiltering.swift; sourceTree = "<group>"; };
+		8B3AC8772717918F00251887 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		8B3AC87C2717928400251887 /* Functions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Functions.swift; sourceTree = "<group>"; };
 		8B5DA69227091C700096C07A /* HSlTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HSlTableViewCell.swift; sourceTree = "<group>"; };
 		8B5DA6A127091DA30096C07A /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		8B5DA6B92709350F0096C07A /* DetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewController.swift; sourceTree = "<group>"; };
@@ -92,7 +96,6 @@
 		8B9AA8E5270AAE7000874298 /* NYCSchools.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NYCSchools.entitlements; sourceTree = "<group>"; };
 		8B9AA8F3270AB22F00874298 /* LocationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationViewController.swift; sourceTree = "<group>"; };
 		8B9AA937270AE38300874298 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		8BA11587270FCD800096D378 /* UIViewAdditions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewAdditions.swift; sourceTree = "<group>"; };
 		8BA115B0270FD8DC0096D378 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		8BBB1BC7270D67B100869150 /* FilterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterViewController.swift; sourceTree = "<group>"; };
 		8BC1496B270E78D1004B212A /* CoreDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataTests.swift; sourceTree = "<group>"; };
@@ -203,7 +206,6 @@
 			isa = PBXGroup;
 			children = (
 				8B5DA69227091C700096C07A /* HSlTableViewCell.swift */,
-				8BA11587270FCD800096D378 /* UIViewAdditions.swift */,
 			);
 			path = "Views and Controllers";
 			sourceTree = "<group>";
@@ -252,6 +254,8 @@
 			children = (
 				8B5DA6E727095DF00096C07A /* ParseUtil.swift */,
 				8B3AC86B27178D8600251887 /* SortingAndFiltering.swift */,
+				8B3AC8772717918F00251887 /* Constants.swift */,
+				8B3AC87C2717928400251887 /* Functions.swift */,
 			);
 			path = Util;
 			sourceTree = "<group>";
@@ -390,13 +394,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8B3AC8782717918F00251887 /* Constants.swift in Sources */,
 				8B9AA8FC270AB5DC00874298 /* LocationViewController.swift in Sources */,
 				8B5DA69327091C710096C07A /* HSlTableViewCell.swift in Sources */,
 				8B1585F22707E232007EE576 /* DirectoryViewController.swift in Sources */,
 				8B1585EE2707E232007EE576 /* AppDelegate.swift in Sources */,
 				8BBB1BC8270D67B100869150 /* FilterViewController.swift in Sources */,
 				8B5DA6BA2709350F0096C07A /* DetailViewController.swift in Sources */,
-				8BA11588270FCD800096D378 /* UIViewAdditions.swift in Sources */,
+				8B3AC87D2717928400251887 /* Functions.swift in Sources */,
 				8B3AC81F27115E9F00251887 /* ModelExtensions.swift in Sources */,
 				8B9AA8AD270AA44100874298 /* WebsiteViewController.swift in Sources */,
 				8B1585F82707E232007EE576 /* NYCSchools.xcdatamodeld in Sources */,
@@ -420,8 +425,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8B3AC8872717936600251887 /* Constants.swift in Sources */,
+				8B3AC8882717936700251887 /* Functions.swift in Sources */,
 				8B3AC87027178DB700251887 /* SortingAndFiltering.swift in Sources */,
-				8BA11598270FD60E0096D378 /* UIViewAdditions.swift in Sources */,
 				8BA11599270FD60E0096D378 /* FilterViewController.swift in Sources */,
 				8BA1159A270FD60E0096D378 /* LocationViewController.swift in Sources */,
 				8B9AA8BC270AAB4000874298 /* HSlTableViewCell.swift in Sources */,

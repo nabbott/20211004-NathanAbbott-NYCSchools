@@ -12,15 +12,14 @@ import os
 import Dispatch
 
 
-//MARK: - Fetch requests and predicates
 
-//let topSATPredication=NSPredicate(format: "SUBQUERY(satResults, $x, ($x.satMathAvgScore+$x.satCriticalReadingAvgScore+$x.satWritingAvgScore)/3 >= 500).@count>0")
 
 //MARK: - View Controller
 class DirectoryViewController: UIViewController {
     @IBOutlet weak var directoryView:UIView!
     @IBOutlet weak var highSchools:UITableView!
     
+    //Generic message
     @IBOutlet weak var loadingIndicatorView:UIView!
     @IBOutlet weak var loadingIndicator:UIActivityIndicatorView!
     @IBOutlet weak var loadingLabel:UILabel!
@@ -46,7 +45,7 @@ class DirectoryViewController: UIViewController {
         didSet {
             filterText.text=sortByFilterBy?.description
             if case .some = sortByFilterBy {
-                UIView.animate(withDuration: view.defaultAnimationDuration){
+                UIView.animate(withDuration: UIAnimations.defaultAnimationDuration){
                     self.filterView.isHidden=false
                 }
             } else {
@@ -147,20 +146,6 @@ class DirectoryViewController: UIViewController {
     }
     
     //MARK: - Toolbar actions
-    @objc
-    func deleteAndImportHSData(sender:UIControl){
-        let alert=UIAlertController(title: "Reload", message: "Reloading will delete the entire database and re-import the data from a known good source", preferredStyle: UIAlertController.Style.alert)
-        let cancel:UIAlertAction=UIAlertAction(title: "Cancel", style: .cancel, handler:{(_)->() in })
-        let ok:UIAlertAction=UIAlertAction(title: "Ok", style: .default, handler:{[weak self](_)->() in
-            self?.showLoadingView()
-            (UIApplication.shared.delegate as! AppDelegate).clearAndReloadData()
-        })
-        
-        alert.addAction(ok)
-        alert.addAction(cancel)
-        self.present(alert, animated: true, completion: nil)
-    }
-    
     //FIXME: Set the borough to the curent setting if there is one
     @objc
     func filter(sender:UIControl){
@@ -181,7 +166,7 @@ class DirectoryViewController: UIViewController {
     @objc
     func search(sender:UIControl){
         searchBar.text=nil
-        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {self.searchBar.isHidden=false})
+        UIView.animate(withDuration: UIAnimations.defaultAnimationDuration, animations: {self.searchBar.isHidden=false})
     }
     
     /// Hides the search related dialogs
@@ -195,7 +180,7 @@ class DirectoryViewController: UIViewController {
     
     /// Hides the filter related dialogs
     func resetFilterViews(){
-        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {
+        UIView.animate(withDuration: UIAnimations.defaultAnimationDuration, animations: {
             self.filterView.isHidden=true
         })
     }
@@ -204,7 +189,7 @@ class DirectoryViewController: UIViewController {
         sortByFilterBy=nil
         searchPredicate=nil
         loadDataAndRefreshTableView()
-        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {
+        UIView.animate(withDuration: UIAnimations.defaultAnimationDuration, animations: {
             self.resetSearchViews()
         })
     }
@@ -214,7 +199,7 @@ class DirectoryViewController: UIViewController {
     @IBAction func removeSearch(sender:UIControl){
         searchPredicate=nil
         loadDataAndRefreshTableView()
-        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {
+        UIView.animate(withDuration: UIAnimations.defaultAnimationDuration, animations: {
             self.resetSearchViews()
         })
     }
@@ -224,7 +209,7 @@ class DirectoryViewController: UIViewController {
     @IBAction func removeFilter(sender:UIControl){
         sortByFilterBy=nil
         loadDataAndRefreshTableView()
-        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {
+        UIView.animate(withDuration: UIAnimations.defaultAnimationDuration, animations: {
             self.resetFilterViews()
         })
     }
@@ -235,8 +220,22 @@ class DirectoryViewController: UIViewController {
     }
     
     //MARK: - Loading Dialog
+    @objc
+    func deleteAndImportHSData(sender:UIControl){
+        let alert=UIAlertController(title: "Reload", message: "Reloading will delete the entire database and re-import the data from a known good source", preferredStyle: UIAlertController.Style.alert)
+        let cancel:UIAlertAction=UIAlertAction(title: "Cancel", style: .cancel, handler:{(_)->() in })
+        let ok:UIAlertAction=UIAlertAction(title: "Ok", style: .default, handler:{[weak self](_)->() in
+            self?.showLoadingView()
+            (UIApplication.shared.delegate as! AppDelegate).clearAndReloadData()
+        })
+        
+        alert.addAction(ok)
+        alert.addAction(cancel)
+        self.present(alert, animated: true, completion: nil)
+    }
+    
     func showLoadingView(){
-        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {[unowned self] in
+        UIView.animate(withDuration: UIAnimations.defaultAnimationDuration, animations: {[unowned self] in
             self.loadingIndicator.startAnimating()
             self.loadingIndicatorView.isHidden=false
             self.directoryView.isHidden=true
@@ -244,7 +243,7 @@ class DirectoryViewController: UIViewController {
     }
     
     func hideLoadingView(){
-        UIView.animate(withDuration: view.defaultAnimationDuration, animations: {[unowned self] in
+        UIView.animate(withDuration: UIAnimations.defaultAnimationDuration, animations: {[unowned self] in
             self.loadingIndicatorView.isHidden=true
             self.loadingIndicator.stopAnimating()
             self.directoryView.isHidden=false
@@ -309,7 +308,7 @@ extension DirectoryViewController:UISearchBarDelegate {
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         defer {
             searchBar.resignFirstResponder()
-            UIView.animate(withDuration: view.defaultAnimationDuration, animations: {
+            UIView.animate(withDuration: UIAnimations.defaultAnimationDuration, animations: {
                 searchBar.isHidden=true
                 self.searchText.text=searchBar.text
                 self.seachResultsView.isHidden = (searchBar.text?.isEmpty ?? true)
@@ -348,8 +347,14 @@ extension DirectoryViewController {
             fr.resultType = .managedObjectResultType
             fr.relationshipKeyPathsForPrefetching=["address"]
             
-            let results=try! (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext.fetch(fr)
-            destination.highSchools.append(contentsOf: results)
+            do {
+                let results=try! (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext.fetch(fr)
+                destination.highSchools.append(contentsOf: results)
+            } catch {
+                
+                
+                os_log(.error,"%@",error as NSError)
+            }
         }
     }
     

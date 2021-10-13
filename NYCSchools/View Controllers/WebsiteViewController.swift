@@ -76,7 +76,7 @@ extension WebsiteViewController:WKNavigationDelegate {
         os_log(.error, "Website: %@ finished loading",website!)
         
         actitityIndicator.stopAnimating()
-        UIView.animate(withDuration: view.defaultAnimationDuration){[unowned self] in
+        UIView.animate(withDuration: UIAnimations.defaultAnimationDuration){[unowned self] in
             self.activityIndicatorView.isHidden=true
             self.webkitView.isHidden=false
         }
@@ -96,7 +96,7 @@ extension WebsiteViewController:WKNavigationDelegate {
         actitityIndicator.stopAnimating()
         activityLabel.text="Could not load \(school ?? "") website"
         
-        UIView.animate(withDuration: view.defaultAnimationDuration){[unowned self] in
+        UIView.animate(withDuration: UIAnimations.defaultAnimationDuration){[unowned self] in
             self.actitityIndicator.isHidden=true
             self.activityIndicatorView.isHidden=false
             self.webkitView.isHidden=true
