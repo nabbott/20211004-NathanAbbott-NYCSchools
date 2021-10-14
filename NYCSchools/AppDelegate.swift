@@ -71,16 +71,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
          error conditions that could cause the creation of the store to fail.
         */
         let container = NSPersistentContainer(name: "NYCSchools")
+//        container.viewContext.automaticallyMergesChangesFromParent=true
+        
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
                 //FIXME: If the persistent container is loaded all core data ops will fail.
                 os_log(.error, "%@", "Unresolved error \(error), \(error.userInfo)")
             } else {
-                //Allow the system to schedule this call, hopefully after the ui has completed rendering
-                //FIXME: Move this to a bg thread
-                DispatchQueue.main.async {
+                
+                container.performBackgroundTask { ctx in
                     do {
-                        let count=try container.viewContext.count(for:NSFetchRequest<HighSchool>(entityName: "HighSchool"))
+                        let count=try ctx.count(for:NSFetchRequest<HighSchool>(entityName: "HighSchool"))
                         #if DEBUG
                         let isUITest = "true"==ProcessInfo.processInfo.environment["UITest"]
                         os_log(.debug,"Loading UI test db: $@", "\(isUITest)")
@@ -94,7 +95,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                         }
                     } catch {
                         os_log(.error, "%@", "\(error)")
-                    }                    
+                    }
                 }
             }
         })
@@ -120,21 +121,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     @objc
     func mergeContextsAfterReload(sender:Notification){
         persistentContainer.viewContext.mergeChanges(fromContextDidSave: sender)
-        NotificationCenter.default.removeObserver(self, name: .NSManagedObjectContextDidSave, object: sender.userInfo?["managedObjectContext"])
+        if #available(iOS 9, *) {
+            //iOS 9 and above will handle the unregistering of notifications
+        } else {
+            NotificationCenter.default.removeObserver(self, name: .NSManagedObjectContextDidSave, object: sender.userInfo?["managedObjectContext"])
+        }
     }
     
-    //FIXME: This should only be run once, at first app load when the db is empty. However there is a chance, when running,
-    //in debug mode that the user will trigger an additional load before the default load has completed.
     func clearAndReloadData(){
-        let bgCtx=persistentContainer.newBackgroundContext()
-        //Note: The context did save notification is only sent because the updating
-        //of relationships occurs through the context instead of directly via the SQLite store.
-        //If the bg context doesn't have at least one save the notification won't fire and the
-        //main context won't see the changes and neither will the user.
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(mergeContextsAfterReload(sender:)),
-                                               name: .NSManagedObjectContextDidSave,
-                                               object: bgCtx)
+        guard !self.isLoadingSchools else {return}
         
         self.isLoadingSchools=true
         var assets=standardDataAssets
@@ -144,40 +139,46 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         #endif
         
-        DispatchQueue.global(qos: .background).async {
-            bgCtx.performAndWait {
-                do {
-                    //FIXME: Maybe wrap the delete and import routines in a transaction.
-                    let importer=HSDataImporter(batchProcess: true)
-                    
-                    try importer.deleteAllHSData(ctx: bgCtx, batch: true)
-                    
-                    guard let schools=NSDataAsset(name: assets.school)?.data else {
-                        os_log(.debug, "%@", "Unable to load the hs data file")
-                        return
-                    }
-                    
-                    guard let satResults=NSDataAsset(name: assets.sat)?.data else {
-                        os_log(.debug, "%@", "Unable to load the sat results data file")
-                        return
-                    }
-                    
-                    os_log(.debug,"Loading schools from: $@",assets.school)
-                    os_log(.debug,"Loading sat from: $@",assets.sat)
-                    try importer.importAllDataAndEstablishRelationships(
-                        highSchools: schools,
-                        satResults: satResults,
-                        ctx: bgCtx)
-                    
-                    if bgCtx.hasChanges {
-                        try bgCtx.save()
-                    }
-                } catch {
-                    os_log(.error,"%@",error as NSError)
-                }
+        persistentContainer.performBackgroundTask { ctx in
+            //Note: The context did save notification is only sent because the updating
+            //of relationships occurs through the context instead of directly via the SQLite store.
+            //If the bg context doesn't have at least one save the notification won't fire and the
+            //main context won't see the changes and neither will the user.
+            
+//            NotificationCenter.default.addObserver(self,
+//                                                   selector: #selector(self.mergeContextsAfterReload(sender:)),
+//                                                   name: .NSManagedObjectContextDidSave,
+//                                                   object: ctx)
+            do {
+                //FIXME: Maybe wrap the delete and import routines in a transaction.
+                let importer=HSDataImporter(batchProcess: true)
+                try importer.deleteAllHSData(ctx: ctx, batch: true)
                 
-                self.isLoadingSchools=false
+                guard let schools=NSDataAsset(name: assets.school)?.data else {
+                    os_log(.debug, "%@", "Unable to load the hs data file")
+                    return
+                }
+                os_log(.debug,"Loading schools from: $@",assets.school)
+                
+                guard let satResults=NSDataAsset(name: assets.sat)?.data else {
+                    os_log(.debug, "%@", "Unable to load the sat results data file")
+                    return
+                }
+                os_log(.debug,"Loading sat from: $@",assets.sat)
+                
+                try importer.importAllDataAndEstablishRelationships(
+                    highSchools: schools,
+                    satResults: satResults,
+                    ctx: ctx)
+                
+                if ctx.hasChanges {
+                    try ctx.save()
+                }
+            } catch {
+                os_log(.error,"%@",error as NSError)
             }
+            
+            self.isLoadingSchools=false
         }
     }
 }
