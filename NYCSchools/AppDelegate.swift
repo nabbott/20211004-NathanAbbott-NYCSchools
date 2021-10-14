@@ -71,8 +71,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
          error conditions that could cause the creation of the store to fail.
         */
         let container = NSPersistentContainer(name: "NYCSchools")
-//        container.viewContext.automaticallyMergesChangesFromParent=true
-        
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
                 //FIXME: If the persistent container is loaded all core data ops will fail.
@@ -99,6 +97,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 }
             }
         })
+        
+        container.viewContext.automaticallyMergesChangesFromParent=true
         return container
     }()
 
@@ -118,16 +118,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     //MARK: - Data import routines
-    @objc
-    func mergeContextsAfterReload(sender:Notification){
-        persistentContainer.viewContext.mergeChanges(fromContextDidSave: sender)
-        if #available(iOS 9, *) {
-            //iOS 9 and above will handle the unregistering of notifications
-        } else {
-            NotificationCenter.default.removeObserver(self, name: .NSManagedObjectContextDidSave, object: sender.userInfo?["managedObjectContext"])
-        }
-    }
-    
     func clearAndReloadData(){
         guard !self.isLoadingSchools else {return}
         
@@ -144,11 +134,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             //of relationships occurs through the context instead of directly via the SQLite store.
             //If the bg context doesn't have at least one save the notification won't fire and the
             //main context won't see the changes and neither will the user.
-            
-//            NotificationCenter.default.addObserver(self,
-//                                                   selector: #selector(self.mergeContextsAfterReload(sender:)),
-//                                                   name: .NSManagedObjectContextDidSave,
-//                                                   object: ctx)
+
             do {
                 //FIXME: Maybe wrap the delete and import routines in a transaction.
                 let importer=HSDataImporter(batchProcess: true)
