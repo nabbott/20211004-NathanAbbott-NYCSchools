@@ -237,6 +237,7 @@ class DirectoryViewController: UIViewController {
     }
     
     func showLoadingView(){
+        self.navigationController?.setToolbarHidden(true, animated: true)
         UIView.animate(withDuration: UIAnimations.defaultAnimationDuration, animations: {[unowned self] in
             self.loadingIndicator.startAnimating()
             self.loadingIndicatorView.isHidden=false
@@ -245,6 +246,7 @@ class DirectoryViewController: UIViewController {
     }
     
     func hideLoadingView(){
+        self.navigationController?.setToolbarHidden(false, animated: true)
         UIView.animate(withDuration: UIAnimations.defaultAnimationDuration, animations: {[unowned self] in
             self.loadingIndicatorView.isHidden=true
             self.loadingIndicator.stopAnimating()
