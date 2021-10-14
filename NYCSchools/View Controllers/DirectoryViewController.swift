@@ -60,23 +60,23 @@ class DirectoryViewController: UIViewController {
     
     //FIXME: Prolly not necessary to redo the fetch all the time.
     func loadDataAndRefreshTableView(performFetch:Bool=true){
-        do {
-            var predicate:NSPredicate?
-            switch (searchPredicate,sortByFilterBy?.predicate) {
-            case (nil,let filterP?):
-                predicate=filterP
-            case (let searchP?, nil):
-                predicate=searchP
-            case (let searchP?, let filterP?):
-                predicate=NSCompoundPredicate(andPredicateWithSubpredicates: [searchP,filterP])
-            default:
-                break
-            }
-            
-            let fetchRequest=schoolsFetchedResultsContoller.fetchRequest
-            fetchRequest.predicate=predicate
-            fetchRequest.sortDescriptors=sortByFilterBy?.sortOrder.sortDescriptors ?? SortByFilterBy.SortOrder.asc.sortDescriptors
+        var predicate:NSPredicate?
+        switch (searchPredicate,sortByFilterBy?.predicate) {
+        case (nil,let filterP?):
+            predicate=filterP
+        case (let searchP?, nil):
+            predicate=searchP
+        case (let searchP?, let filterP?):
+            predicate=NSCompoundPredicate(andPredicateWithSubpredicates: [searchP,filterP])
+        default:
+            break
+        }
+        
+        let fetchRequest=schoolsFetchedResultsContoller.fetchRequest
+        fetchRequest.predicate=predicate
+        fetchRequest.sortDescriptors=sortByFilterBy?.sortOrder.sortDescriptors ?? SortByFilterBy.SortOrder.asc.sortDescriptors
  
+        do {
             if performFetch {
                 try schoolsFetchedResultsContoller.performFetch()
             }
