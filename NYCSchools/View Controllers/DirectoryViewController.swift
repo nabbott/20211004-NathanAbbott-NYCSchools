@@ -288,7 +288,7 @@ extension DirectoryViewController: UITableViewDataSource {
         if #available(iOS 14, *) {
             var config=cell.defaultContentConfiguration()
             config.text=school.schoolName ?? "Not Available"
-            if let sat=school.satResults, (sat.satMathAvgScore+sat.satCriticalReadingAvgScore+sat.satWritingAvgScore)/3 >= 500 {
+            if school.SATAverage >= 500 {
                 config.image=UIImage(systemName: "star.fill")
             }
             cell.contentConfiguration=config
