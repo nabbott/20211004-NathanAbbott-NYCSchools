@@ -104,7 +104,7 @@
 		8B5DA715270A1E5C0096C07A /* Address.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Address.json; sourceTree = "<group>"; };
 		8B5DA716270A1E640096C07A /* SAT.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = SAT.json; sourceTree = "<group>"; };
 		8B9AA8AC270AA44100874298 /* WebsiteViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsiteViewController.swift; sourceTree = "<group>"; };
-		8B9AA8CE270AAB4000874298 /* NYCSchoolsIOS12.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NYCSchoolsIOS12.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8B9AA8CE270AAB4000874298 /* NYCSchools.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NYCSchools.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8B9AA8E5270AAE7000874298 /* NYCSchools.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NYCSchools.entitlements; sourceTree = "<group>"; };
 		8B9AA8F3270AB22F00874298 /* LocationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationViewController.swift; sourceTree = "<group>"; };
 		8B9AA937270AE38300874298 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -166,7 +166,7 @@
 			children = (
 				8B1585EA2707E232007EE576 /* NYCSchools.app */,
 				8B1586032707E23F007EE576 /* NYCSchoolsTests.xctest */,
-				8B9AA8CE270AAB4000874298 /* NYCSchoolsIOS12.app */,
+				8B9AA8CE270AAB4000874298 /* NYCSchools.app */,
 				8B3AC8AB2717A27200251887 /* NYCSchoolsUITests.xctest */,
 			);
 			name = Products;
@@ -360,7 +360,7 @@
 			);
 			name = NYCSchoolsIOS12;
 			productName = NYCSchools;
-			productReference = 8B9AA8CE270AAB4000874298 /* NYCSchoolsIOS12.app */;
+			productReference = 8B9AA8CE270AAB4000874298 /* NYCSchools.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -796,8 +796,8 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				INFOPLIST_FILE = "$(SRCROOT)/NYCSchools/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sundaylogic.NYCSchoolsIOS12;
-				PRODUCT_NAME = NYCSchoolsIOS12;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sundaylogic.NYCSchools;
+				PRODUCT_NAME = NYCSchools;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -811,8 +811,8 @@
 				DEVELOPMENT_TEAM = YTMVKPZGGB;
 				INFOPLIST_FILE = "$(SRCROOT)/NYCSchools/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sundaylogic.NYCSchoolsIOS12;
-				PRODUCT_NAME = NYCSchoolsIOS12;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sundaylogic.NYCSchools;
+				PRODUCT_NAME = NYCSchools;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
