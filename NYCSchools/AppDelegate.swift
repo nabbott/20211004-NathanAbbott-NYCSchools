@@ -5,10 +5,11 @@
 //  Created by Nathan Abbott on 10/1/21.
 //
 
+import os
 import UIKit
 import CoreData
-import os
 import Dispatch
+import Foundation
 
 func logInstalledFonts(){
     print("********** BEGIN FONT LOGGING ****************************************************")
@@ -19,6 +20,10 @@ func logInstalledFonts(){
     }
     print("********** END FONT LOGGING ******************************************************")
 }
+
+fileprivate typealias DataAsset=(school:String,sat:String)
+fileprivate let standardDataAssets:DataAsset=("2017DOEHighSchoolDirectory","2012SATResults")
+fileprivate let UITestingDataAssets:DataAsset=("UIUnitTestSchoolFile","UIUnitTestSATFile")
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -72,10 +77,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 os_log(.error, "%@", "Unresolved error \(error), \(error.userInfo)")
             } else {
                 //Allow the system to schedule this call, hopefully after the ui has completed rendering
+                //FIXME: Move this to a bg thread
                 DispatchQueue.main.async {
                     do {
                         let count=try container.viewContext.count(for:NSFetchRequest<HighSchool>(entityName: "HighSchool"))
-                        if 0==count {
+                        #if DEBUG
+                        let isUITest = "true"==ProcessInfo.processInfo.environment["UITest"]
+                        os_log(.debug,"Loading UI test db: $@", "\(isUITest)")
+                        #else
+                        let isUITest=false
+                        #endif
+                        
+                        if 0==count || isUITest {
                             os_log(.debug,"Database is empty, loading in data from default files.")
                             self.clearAndReloadData()
                         }
@@ -124,6 +137,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                                                object: bgCtx)
         
         self.isLoadingSchools=true
+        var assets=standardDataAssets
+        #if DEBUG
+        if "true"==ProcessInfo.processInfo.environment["UITest"] {
+            assets=UITestingDataAssets
+        }
+        #endif
+        
         DispatchQueue.global(qos: .background).async {
             bgCtx.performAndWait {
                 do {
@@ -132,16 +152,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                     
                     try importer.deleteAllHSData(ctx: bgCtx, batch: true)
                     
-                    guard let schools=NSDataAsset(name: "2017DOEHighSchoolDirectory")?.data else {
+                    guard let schools=NSDataAsset(name: assets.school)?.data else {
                         os_log(.debug, "%@", "Unable to load the hs data file")
                         return
                     }
                     
-                    guard let satResults=NSDataAsset(name: "2012SATResults")?.data else {
+                    guard let satResults=NSDataAsset(name: assets.sat)?.data else {
                         os_log(.debug, "%@", "Unable to load the sat results data file")
                         return
                     }
                     
+                    os_log(.debug,"Loading schools from: $@",assets.school)
+                    os_log(.debug,"Loading sat from: $@",assets.sat)
                     try importer.importAllDataAndEstablishRelationships(
                         highSchools: schools,
                         satResults: satResults,
