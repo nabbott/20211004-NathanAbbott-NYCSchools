@@ -1,0 +1,27 @@
+[
+    ["code%d","code","string"],
+    ["prgdesc%d","desc","string"],
+    ["program%d","name","string"],
+    ["offer_rate%d","offerRate","string"],
+    ["seats10%d","grade10Seats","string"],
+    ["directions%d","directions","string"],
+    ["interest%d","interestArea","string"],
+    ["method%d","admissionsMethod","string"],
+    ["eligibility%d","eligibility","string"],
+    ["auditioninformation%d","auditionInfo","string"],
+    ["academicopportunities%d","academicOpportunities","string"],
+    
+    ["seats9ge%d","grade9Seats","int"],
+    ["seats9swd%d","grade9SWDSeats","int"],
+    ["seats%dspecialized","specializedSeats","int"],
+    ["grade9geapplicants%d","grade9Applicants","int"],
+    ["grade9swdapplicants%d","grade9SWDApplicants","int"],
+    ["applicants%dspecialized","specializedApplicants","int"],
+    ["grade9geapplicantsperseat%d","grade9ApplicantsPerSeat","int"],
+    ["grade9swdapplicantsperseat%d","grade9SWDApplicantsPerSeat","int"],
+    ["appperseat%dspecialized","specializedApplicantsPerSeat","int"],
+    
+    ["common_audition%d","auditionIsCommon","bool"],
+    ["grade9gefilledflag%d","grade9SeatsFilled","bool"],
+    ["grade9swdfilledflag%d","grade9SWDSeatsFilled","bool"]
+]

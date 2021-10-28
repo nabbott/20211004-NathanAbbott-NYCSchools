@@ -72,11 +72,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-com.apple.CoreData.SQLDebug 1"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-showFonts"
+            argument = "-com.apple.CoreData.SQLDebug 0"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

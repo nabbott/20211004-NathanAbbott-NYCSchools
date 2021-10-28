@@ -22,11 +22,12 @@ enum CoreDataImportErrors:Error {
     case bulkInsertError(err:Error)
     case serializedDataFileUnreadable(msg:String)
     case deserializationError(err:Error)
-    case persistentStoreCreationError(err:Error)
+    case persistentStoreCreationError(err:Error?, msg:String?=nil)
     case persistentStoreUpdateError(err:Error)
     case relationshipFailureError(err:Error)
     case entityDescriptionNotFound(msg:String)
     case mocSaveError(err:Error)
+    case mappingFileError(err:Error)
 }
 
 /// The main import driver routine. Takes the name of school and SAT JSON files, normalizes the records, transforms the original field names
@@ -39,24 +40,37 @@ enum CoreDataImportErrors:Error {
 ///   - satFile: Name of the JSON file containing the sat records without the '.json' extension (the file is expected to have this but
 ///   do not append it the the file name). File is expected to be a JSON format plain text file.
 /// - Returns: A URL to the new data store if import was successful
-func importSchoolAndSATResults(schoolFile:String, satFile:String)->NSPersistentContainer? {
-    var newStore:NSPersistentContainer?
+func importSchoolAndSATResults(schoolFile:String, satFile:String) throws ->NSPersistentContainer? {
+    var newStore:NSPersistentContainer!
     do {
-        guard let store=try newSQLiteStore(modelName: "NYCSchools", storeName: "ImportStore") else {
-            //FIXME - throw an exception here
-            return nil
-        }
-        let ctx=store.viewContext
-
-        importHighSchools(schoolFile: schoolFile, ctx: ctx)
-        importSATResults(satFile: satFile, ctx: ctx)
+        newStore=try newSQLiteStore(modelName: "NYCSchools", storeName: "ImportStore")
+    } catch {
+        //Escape here if the temp store couldn't be created
+        throw CoreDataImportErrors.persistentStoreCreationError(err: error)
+    }
+    
+    let ctx=NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+    ctx.persistentStoreCoordinator=newStore.persistentStoreCoordinator
+    do {
+        //The routines below will error out if the transformation mapping or
+        //the input files were missing or corrupt
+        try persistTransformedData(
+            transformed: try importAndTransformHSData(schools: schoolFile),
+            ctx: ctx)
         
-        establishProgramRelationships(ctx: ctx)
-        establishSchoolRelationships(ctx: ctx)
-        newStore=store
+        try persistTransformedData(
+            transformed: try importAndTransformSATResults(sats: satFile),
+            ctx: ctx)
+        
+        try establishSchoolRelationships(ctx: ctx)
+        try establishProgramRelationships(ctx: ctx)
     } catch {
         os_log(.error, "%@", error as NSError)
+        try? removeTemporaryStore(tmpContainer: newStore)
+        throw error
     }
+        
+
     
     return newStore
 }
@@ -67,21 +81,18 @@ func importSchoolAndSATResults(schoolFile:String, satFile:String)->NSPersistentC
 ///   - storeName: File name for the new data store
 /// - Throws: An import error if the store couldn't be created for some reason.
 /// - Returns: A tuple containing a url to the new store and a persistent container object from which a managed object context can be retrieved.
-func newSQLiteStore(modelName:String, storeName:String) throws -> NSPersistentContainer? {
+func newSQLiteStore(modelName:String, storeName:String, path:URL=NSPersistentContainer.defaultDirectoryURL()) throws -> NSPersistentContainer {
     guard let modelURL = Bundle.main.url(forResource: modelName, withExtension: "momd") else {
         os_log(.error,"Failed to find data model.")
-        return nil
+        throw CoreDataImportErrors.persistentStoreCreationError(err:nil, msg:"Failed to find data model: \(modelName).")
     }
     
     guard let mom = NSManagedObjectModel(contentsOf: modelURL) else {
         os_log(.error,"Failed to create model from file: %@.", modelURL.path)
-        return nil
+        throw CoreDataImportErrors.persistentStoreCreationError(err:nil, msg:"Failed to instantiate the model at: \(modelURL).")
     }
     
-    let containerURL=NSPersistentContainer.defaultDirectoryURL()
-//    let containerURL=FileManager.default.temporaryDirectory
-    let dbURL:URL=URL(fileURLWithPath: "\(storeName).sqlite", relativeTo: containerURL)
-    
+    let dbURL:URL=URL(fileURLWithPath: "\(storeName).sqlite", relativeTo: path)
     let psc=NSPersistentContainer(name: storeName, managedObjectModel: mom)
     let coordinator=psc.persistentStoreCoordinator
     do {
@@ -102,7 +113,6 @@ func newSQLiteStore(modelName:String, storeName:String) throws -> NSPersistentCo
 func updateExistingStoreWithNewStore(storeCoordinator coordinator: NSPersistentStoreCoordinator, oldURL:URL, newURL:URL) throws {
     do {
         try coordinator.replacePersistentStore(at: oldURL, destinationOptions: nil, withPersistentStoreFrom: newURL, sourceOptions: nil, ofType: NSSQLiteStoreType)
-//        try coordinator.destroyPersistentStore(at: newURL, ofType: NSSQLiteStoreType, options: nil)
     } catch {
         throw CoreDataImportErrors.persistentStoreUpdateError(err: error)
     }
@@ -141,23 +151,16 @@ func removeTemporaryStore(tmpContainer:NSPersistentContainer) throws {
 /// - Returns: An array of Dictionay<String,String> representing fields and values respectively
 func deserializeData(fileName:String, ext:String="json", isDataAsset:Bool=true) throws -> Array<Record>? {
     var data:Data!
-//    if isDataAsset {
-//        guard let d=NSDataAsset(name: fileName)?.data else {
-//            throw CoreDataImportErrors.serializedDataFileUnreadable(msg: "File: \(fileName) could not be found")
-//        }
-//        data=d
-//    } else {
-        let fManager=FileManager.default
-        guard let fileURL=Bundle.main.url(forResource: fileName, withExtension:ext), fManager.isReadableFile(atPath: fileURL.path) else {
-            throw CoreDataImportErrors.serializedDataFileUnreadable(msg: "File: \(fileName) could not be found")
-        }
-        
-        do {
-            data=try Data(contentsOf: fileURL, options: .uncached)
-        } catch {
-            throw CoreDataImportErrors.deserializationError(err: error)
-        }
-//    }
+    let fManager=FileManager.default
+    guard let fileURL=Bundle.main.url(forResource: fileName, withExtension:ext), fManager.isReadableFile(atPath: fileURL.path) else {
+        throw CoreDataImportErrors.serializedDataFileUnreadable(msg: "File: \(fileName) could not be found")
+    }
+    
+    do {
+        data=try Data(contentsOf: fileURL, options: .uncached)
+    } catch {
+        throw CoreDataImportErrors.deserializationError(err: error)
+    }
     
     var records:Array<Record>
     do {
@@ -191,54 +194,100 @@ func transformDeserializedData(records:AnyCollection<Record>, transformations:[D
     return transformed
 }
 
-func importHighSchools(schoolFile:String, ctx:NSManagedObjectContext){
+/// Reads in the JSON file provided by NYC Open Data and drives the transformation routine that converts each field name to a local
+/// name and field value from a string to the data type defined in the managed object model.
+/// - Parameter schoolFile: JSON file provided by NYC Open Data
+/// - Throws: An error if there is a problem with the mapping file or deserializing the JSON file
+/// - Returns: A dictionary whose keys are the names of entities from the managed object mode and whos values
+/// are arrays of dictionarys representing fields and values for each instance of that type found in a give input record. For
+/// example, programs may have 10 instances per school
+func importAndTransformHSData(schools:String) throws -> [String:[[String:Any]]] {
+    var transformed:[String:[[String:Any]]]!
+    var transformers:[DataTransformer]!
     do {
-        if let schools=try deserializeData(fileName: schoolFile) {
-            let transformers:[DataTransformer]=[
-                try MappingTransformer(mappingFile: "HighSchool", entityName: "HighSchool")!,
-                try MappingTransformer(mappingFile: "Address", entityName: "Address")!,
-                try ProgramTransformer(mappingFile: "Program", entityName: "Program")!,
-                ProgReqsTransformer(entityName: "ProgramAdmissionReqs"),
-                AdmissionsPriorityTransformer(entityName: "ProgramAdmissionsPriority")
-            ]
+        transformers=[
+            try MappingTransformer(mappingFile: "HighSchool", entityName: "HighSchool")!,
+            try MappingTransformer(mappingFile: "Address", entityName: "Address")!,
+            try ProgramTransformer(mappingFile: "Program", entityName: "Program")!,
+            ProgReqsTransformer(entityName: "ProgramAdmissionReqs"),
+            AdmissionsPriorityTransformer(entityName: "ProgramAdmissionsPriority")
+        ]
+    } catch {
+        //Escape here if unable to load a transformation file
+        throw CoreDataImportErrors.mappingFileError(err: error)
+    }
+    
+    do {
+        if let schools=try deserializeData(fileName: schools) {
             os_log(.debug, "Transforming school records")
-            let transformed=transformDeserializedData(records: AnyCollection(schools), transformations: transformers)
-            os_log(.debug, "Transformed %d school records", schools.count)
-            transformed.forEach {typeAndValues in
-                do {
-                    try persistNewEntities(entityProperties: typeAndValues.value, entityName: typeAndValues.key, ctx: ctx)
-                } catch {
-                    os_log(.error,"%@",error as NSError)
-                }
-            }
+            transformed=transformDeserializedData(records: AnyCollection(schools), transformations: transformers)
         }
     } catch {
+        //Escape out the input file, schoolFile, was corrupt.
         os_log(.error, "%@", error as NSError)
+        throw error
+    }
+    
+    return transformed
+}
+
+/// Reads in the JSON file provided by NYC Open Data and drives the transformation routine that converts each field name to a local
+/// name and field value from a string to the data type defined in the managed object model.
+/// - Parameter satFile: JSON file provided by NYC Open Data
+/// - Throws: An error if there is a problem with the mapping file or deserializing the JSON file
+/// - Returns: A dictionary whose keys are the names of entities from the managed object mode and whos values
+/// are arrays of dictionarys representing fields and values for each instance of that type found in a give input record. For
+/// example, programs may have 10 instances per school
+func importAndTransformSATResults(sats:String) throws -> [String:[[String:Any]]]{
+    var transformed:[String:[[String:Any]]]!
+    var transformers:[DataTransformer]!
+    
+    do {
+        transformers=[
+            try MappingTransformer(mappingFile: "SATResults", entityName: "SATResult")!
+        ]
+    } catch {
+        throw CoreDataImportErrors.mappingFileError(err: error)
+    }
+    
+    do {
+        if let sats=try deserializeData(fileName: sats) {
+            os_log(.debug, "Transforming SAT records")
+            transformed=transformDeserializedData(records: AnyCollection(sats), transformations: transformers)
+            os_log(.debug, "Transformed %d SAT records", sats.count)
+        }
+    } catch {
+        //Escape out the input file, satFile, was corrupt.
+        os_log(.error, "%@", error as NSError)
+        throw error
+    }
+    
+    return transformed
+}
+
+
+/// Loops though the dictionary of MO types and persists the array of records.
+/// - Parameters:
+///   - transformed: A dictionary of record after having been transformed from the NYC open data representation to the
+///   local representation. Each key is the name of a type defined in the managed object mode and eacy value is an array of dictionarys
+///   of field name/value pairs.
+///   - ctx: The context handling the inserts. Normally this would come from the container created in the driver routine but you can
+///   supply your own for testing etc.
+/// - Throws: A error if either batch or per record insertion failed. This is an all or nothing (atomic) process - either all of the inserts
+///   succeed or none do. Since this is not a user controlled process, if an error is raised the temp store should removed and the update
+///   tried again once the issues have been resolved.
+func persistTransformedData(transformed:[String:[[String:Any]]],ctx:NSManagedObjectContext) throws {
+    try transformed.forEach {typeAndValues in
+        do {
+            try persistNewEntities(entityProperties: typeAndValues.value, entityName: typeAndValues.key, ctx: ctx)
+        } catch {
+            //All or thing here - either all the MO types succeed or none do
+            os_log(.error,"%@",error as NSError)
+            throw error
+        }
     }
 }
 
-func importSATResults(satFile:String, ctx:NSManagedObjectContext){
-    do {
-        if let sats=try deserializeData(fileName: satFile) {
-            let transformers:[DataTransformer]=[
-                try MappingTransformer(mappingFile: "SATResults", entityName: "SATResult")!
-            ]
-            os_log(.debug, "Transforming SAT records")
-            let transformed=transformDeserializedData(records: AnyCollection(sats), transformations: transformers)
-            os_log(.debug, "Transformed %d SAT records", sats.count)
-            
-            transformed.forEach {typeAndValues in
-                do {
-                    try persistNewEntities(entityProperties: typeAndValues.value, entityName: typeAndValues.key, ctx: ctx)
-                } catch {
-                    os_log(.error,"%@",error as NSError)
-                }
-            }
-        }
-    } catch {
-        os_log(.error, "%@", error as NSError)
-    }
-}
 
 //MARK: - Managed Object Routines
 
@@ -267,7 +316,8 @@ func deleteAll(entityName:String, ctx:NSManagedObjectContext) throws {
 ///   - entityProperties: An array of dictionaries where the key is a field and the value is the field value.
 ///   - entityName: Name of the core data type to persist
 ///   - ctx: The managed object context handling the persistence
-///   - batchInsert: Whether or not batch processing should be used. Set this to false for unit testing
+///   - batchInsert: Whether or not batch processing should be used; set this to false for unit testing. Batch insert has only been
+///   available since iOS 13 so older devices will be forced to insert objects the old fashioned way.
 /// - Throws: An error if the write fails
 func persistNewEntities(entityProperties:Array<[String:Any]>, entityName:String, ctx:NSManagedObjectContext, batchInsert:Bool=true) throws {
     os_log(.debug, "Preparing to persist %d instances of %@",entityProperties.count, entityName)
@@ -280,6 +330,43 @@ func persistNewEntities(entityProperties:Array<[String:Any]>, entityName:String,
     os_log(.debug, "Persisted %d instances of %@",entityProperties.count, entityName)
 }
 
+/// Writes each entity directly to the Core Data store. This happens as a series of SQL insert-into statements and thus only works
+/// with SQLite stores. Since this more or less by passes Core Data none of the persisted entities exist in the context and will need
+/// to be loaded seperately. If the write fails any changes on the undo stack are removed (rolled back).
+/// - Parameters:
+///   - entityProperties: An array of dictionaries where each key is a field name and the value is the value of the correct type
+///   for that field.
+///   - entityName: The name of the entity as defined in the managed object model
+///   - ctx: The context handling the inserts.
+/// - Throws: An error is thrown if the entity cannot be found in the managed object model or batch insert fails.
+@available(iOS 13,*)
+func batchPersistNewEntities(entityProperties:Array<[String:Any]>, entityName:String, ctx:NSManagedObjectContext) throws {
+    guard let entityDesc=ctx.persistentStoreCoordinator?.managedObjectModel.entitiesByName[entityName] else {
+        throw CoreDataImportErrors.entityDescriptionNotFound(msg:"Description not found for: \(entityName)")
+    }
+
+    let insertRequest=NSBatchInsertRequest(entity: entityDesc, objects: entityProperties)
+    insertRequest.resultType = .count
+    
+    do {
+        let result=try ctx.execute(insertRequest)
+        if let rowsInserted=(result as! NSBatchInsertResult).result as? NSNumber {
+            os_log(.debug,"%@, %@ rows inserted", rowsInserted,entityName)
+        }
+    } catch {
+        os_log(.error, "%@", error as NSError)
+        ctx.rollback()
+        throw CoreDataImportErrors.bulkInsertError(err: error)
+    }
+}
+
+/// Instead of batch inserting this routing inserts each record in the provided array one at at thing using the context.
+/// - Parameters:
+///   - entityProperties: An array of dictionaries where each key is a field name and the value is the value of the correct type
+///   for that field.
+///   - entityName: The name of the entity as defined in the managed object model
+///   - ctx: The context handling the inserts.
+/// - Throws: An error is thrown if the entity cannot be found in the managed object model or batch insert fails.
 func singlePersistNewEntities(entityProperties:Array<[String:Any]>, entityName:String, ctx:NSManagedObjectContext) throws {
     guard let entityDesc=ctx.persistentStoreCoordinator?.managedObjectModel.entitiesByName[entityName] else {
         throw CoreDataImportErrors.entityDescriptionNotFound(msg:"Description not found for: \(entityName)")
@@ -302,78 +389,65 @@ func singlePersistNewEntities(entityProperties:Array<[String:Any]>, entityName:S
     }
 }
 
-@available(iOS 13,*)
-func batchPersistNewEntities(entityProperties:Array<[String:Any]>, entityName:String, ctx:NSManagedObjectContext) throws {
-    guard let entityDesc=ctx.persistentStoreCoordinator?.managedObjectModel.entitiesByName[entityName] else {
-        throw CoreDataImportErrors.entityDescriptionNotFound(msg:"Description not found for: \(entityName)")
+
+/// Establishes the various parent/child relationships after the bulk insert.
+/// - Parameters:
+///   - ctx: The managed object context
+///   - parentType: The type of the parent as defined in the managed object model
+///   - fetchPredicate: The predicate that fetches each set of children
+///   - relHandlers: Each relationship belongs to a different field in the parent and may have a different cardinality (one-one,
+///   one-many, etc.) this array of tuples allows for custom handlng per child. The first element in the tuple should be the class type of the child and the second
+///   element should be a function that takes the parent and a set of [1..N] children and adds the children to the parent.
+/// - Returns: An arry of children of type childType.
+func establishParentChildRelations<P>(ctx:NSManagedObjectContext, parentType:P.Type, fetchPredicate:(P)->NSPredicate, relHandlers:[(NSManagedObject.Type,(P,NSSet)->())]) throws where P:NSManagedObject {
+    let parentFR=NSFetchRequest<P>(entityName: "\(parentType)")
+    
+    /// Fetches all programs children of a certain type based on the child's dbn and program number values.
+    /// - Parameters:
+    ///   - prog: The parent program
+    ///   - childType: The class type fo the child entity
+    /// - Returns: An arry of children of type childType
+    func fetchChildren<T>(parent:P, childType:T.Type) throws -> [T] where T:NSManagedObject {
+        let fr=NSFetchRequest<T>(entityName: "\(childType)")
+        fr.predicate=fetchPredicate(parent)
+        
+        return try ctx.fetch(fr)
     }
 
-    let insertRequest=NSBatchInsertRequest(entity: entityDesc, objects: entityProperties)
-    insertRequest.resultType = .count
-    
     do {
-        let result=try ctx.execute(insertRequest)
-        if let rowsInserted=(result as! NSBatchInsertResult).result as? NSNumber {
-            os_log(.debug,"%@, %@ rows inserted", rowsInserted,entityName)
+        try ctx.fetch(parentFR).forEach { parent in
+            try relHandlers.forEach { handler in
+                let children=try fetchChildren(parent:parent, childType:handler.0)
+                guard !children.isEmpty else {return}
+                
+                handler.1(parent,NSSet(array: children))
+            }
         }
+        try ctx.save()
     } catch {
         os_log(.error, "%@", error as NSError)
         ctx.rollback()
-        throw CoreDataImportErrors.bulkInsertError(err: error)
+        throw error
     }
 }
 
 /// Batch inserts do not allow for the creation of relationships, that is handled in this routine. For each program, the relationships between it
 /// and the program's requirements and admissions priorities are established
 /// - Parameter ctx: The managed object context to use. This should be the same context that has been used for the other import routines
-func establishProgramRelationships(ctx:NSManagedObjectContext) {
-    print("Current thread: \(Thread.current.name ?? "NO NAME")")
-    
-    let programFR=NSFetchRequest<Program>(entityName: "Program")
-    programFR.sortDescriptors=[NSSortDescriptor(key: "dbn", ascending: true)]
-//    programFR.relationshipKeyPathsForPrefetching=["admissionPriority","admissionReqs"]
-    let childTypeAndHandlers:[(NSManagedObject.Type, (Program,NSSet)->())]=[
-        (ProgramAdmissionsPriority.self, {(p,c) in p.addToAdmissionPriority(c)}),
-        (ProgramAdmissionReqs.self, {(p,c) in p.addToAdmissionReqs(c)})
-    ]
-
-    func fetchChildren<T>(prog:Program, childType:T.Type) -> [T] where T:NSManagedObject {
-        let fr=NSFetchRequest<T>(entityName: "\(childType)")
-        fr.predicate=NSCompoundPredicate(andPredicateWithSubpredicates: [
-            NSPredicate(format: "dbn=%@", prog.dbn!),
-            NSPredicate(format: "programNo=%d", prog.programNumber)
+func establishProgramRelationships(ctx:NSManagedObjectContext) throws {
+    try establishParentChildRelations(
+        ctx: ctx,
+        parentType: Program.self,
+        fetchPredicate: { (prog:Program) -> NSPredicate in
+            NSCompoundPredicate(andPredicateWithSubpredicates: [
+                NSPredicate(format: "dbn=%@", prog.dbn!),
+                NSPredicate(format: "programNo=%d", prog.programNumber)
+            ])
+        },
+        relHandlers:[
+            (ProgramAdmissionsPriority.self, {(p,c) in p.addToAdmissionPriority(c)}),
+            (ProgramAdmissionReqs.self, {(p,c) in p.addToAdmissionReqs(c)})
         ])
-        var children:[T]!
-        do {
-            //FIXME: Handle this
-            children=try ctx.fetch(fr)
-        } catch {
-            os_log(.error, "%@", error as NSError)
-        }
-        
-        return children
-    }
-    
-    //FIXME: Handle potential errors
-    os_log(.debug,"Preparing to establish program relationships")
-    try! ctx.fetch(programFR).forEach { program in
-        childTypeAndHandlers.forEach {typeAndHandler in
-            let children=fetchChildren(prog: program, childType: typeAndHandler.0)
-            guard !children.isEmpty else {return}
-
-//            print("Program: \(program.programNumber) for high school: \(program.dbn!), relationship: \(typeAndHandler.0)")
-            typeAndHandler.1(program,NSSet(array: children))
-        }
-    }
-    if ctx.hasChanges {
-        //FIXME: Handle potential errors
-        do {
-            try ctx.save()
-        } catch {
-            os_log(.error, "%@", error as NSError)
-            ctx.rollback()
-        }
-    }
     
     os_log(.debug,"Established program relationships")
 }
@@ -381,43 +455,112 @@ func establishProgramRelationships(ctx:NSManagedObjectContext) {
 /// Batch inserts do not allow for the creation of relationships, that is handled in this routine. For each school, the relationships between it
 /// and the schools's address, SAT results, and programs are established
 /// - Parameter ctx: The managed object context to use. This should be the same context that has been used for the other import routines
-func establishSchoolRelationships(ctx:NSManagedObjectContext) {
-    let schoolFR=NSFetchRequest<HighSchool>(entityName: "HighSchool")
-    let childTypeAndHandlers:[(NSManagedObject.Type, (HighSchool,NSSet)->())]=[
-        (Address.self, { (p,c) in if let a=c.allObjects.first as? Address {p.address=a} }),
-        (SATResult.self, {(p,c) in if let s=c.allObjects.first as? SATResult {p.satResults=s} }),
-        (Program.self, { (p,c) in p.addToPrograms(c) })
-    ]
-    
-    func fetchChildren<T>(school:HighSchool, childType:T.Type) -> [T] where T:NSManagedObject {
-        let fr=NSFetchRequest<T>(entityName: "\(childType)")
-        fr.predicate=NSCompoundPredicate(andPredicateWithSubpredicates: [
+func establishSchoolRelationships(ctx:NSManagedObjectContext) throws {
+    try establishParentChildRelations(
+        ctx: ctx,
+        parentType: HighSchool.self,
+        fetchPredicate: { (school:HighSchool) -> NSPredicate in
             NSPredicate(format: "dbn=%@", school.dbn!)
+        },
+        relHandlers:[
+            (Address.self, { (p,c) in if let a=c.allObjects.first as? Address {p.address=a} }),
+            (SATResult.self, {(p,c) in if let s=c.allObjects.first as? SATResult {p.satResults=s} }),
+            (Program.self, { (p,c) in p.addToPrograms(c) })
         ])
-
-        //FIXME: Handle potential errors
-        return try! ctx.fetch(fr)
-    }
-
-    //FIXME: Handle potential errors
-    os_log(.debug,"Preparing to establish school relationships")
-    try! ctx.fetch(schoolFR).forEach { school in
-        childTypeAndHandlers.forEach { typeAndHandler in
-            let children=fetchChildren(school: school, childType: typeAndHandler.0)
-            guard !children.isEmpty else {return}
-
-            typeAndHandler.1(school,NSSet(array: children))
-        }
-    }
     
-    if ctx.hasChanges {
-        //FIXME: Handle potential errors
-        do {
-            try ctx.save()
-        } catch {
-            os_log(.error, "%@", error as NSError)
-            ctx.rollback()
-        }
-    }
     os_log(.debug,"Established school relationships")
 }
+
+//func establishProgramRelationships(ctx:NSManagedObjectContext) throws {
+//    print("Current thread: \(Thread.current.name ?? "NO NAME")")
+//
+//    let programFR=NSFetchRequest<Program>(entityName: "Program")
+//    programFR.sortDescriptors=[NSSortDescriptor(key: "dbn", ascending: true)]
+//    let childTypeAndHandlers:[(NSManagedObject.Type, (Program,NSSet)->())]=[
+//        (ProgramAdmissionsPriority.self, {(p,c) in
+//            p.addToAdmissionPriority(c)
+//        }),
+//        (ProgramAdmissionReqs.self, {(p,c) in p.addToAdmissionReqs(c)})
+//    ]
+//
+//    /// Fetches all programs children of a certain type based on the child's dbn and program number values.
+//    /// - Parameters:
+//    ///   - prog: The parent program
+//    ///   - childType: The class type fo the child entity
+//    /// - Returns: An arry of children of type childType
+//    func fetchChildren<T>(prog:Program, childType:T.Type) throws -> [T] where T:NSManagedObject {
+//        let fr=NSFetchRequest<T>(entityName: "\(childType)")
+//        fr.predicate=NSCompoundPredicate(andPredicateWithSubpredicates: [
+//            NSPredicate(format: "dbn=%@", prog.dbn!),
+//            NSPredicate(format: "programNo=%d", prog.programNumber)
+//        ])
+//        var children:[T]!
+//        children=try ctx.fetch(fr)
+//
+//        return children
+//    }
+//
+//    os_log(.debug,"Preparing to establish program relationships")
+//    do {
+//        try ctx.fetch(programFR).forEach { program in
+//            childTypeAndHandlers.forEach {typeAndHandler in
+//                do {
+//                    let children=try fetchChildren(prog: program, childType: typeAndHandler.0)
+//                    guard !children.isEmpty else {return}
+//
+//                    typeAndHandler.1(program,NSSet(array: children))
+//                } catch {
+//                    os_log(.error, "%@", error as NSError)
+//                }
+//            }
+//        }
+//
+//        try ctx.save()
+//    } catch {
+//        os_log(.error, "%@", error as NSError)
+//        ctx.rollback()
+//        throw error
+//    }
+//
+//    os_log(.debug,"Established program relationships")
+//}
+//func establishSchoolRelationships(ctx:NSManagedObjectContext) throws {
+//    let schoolFR=NSFetchRequest<HighSchool>(entityName: "HighSchool")
+//    let childTypeAndHandlers:[(NSManagedObject.Type, (HighSchool,NSSet)->())]=[
+//        (Address.self, { (p,c) in if let a=c.allObjects.first as? Address {p.address=a} }),
+//        (SATResult.self, {(p,c) in if let s=c.allObjects.first as? SATResult {p.satResults=s} }),
+//        (Program.self, { (p,c) in p.addToPrograms(c) })
+//    ]
+//
+//    func fetchChildren<T>(school:HighSchool, childType:T.Type) throws -> [T] where T:NSManagedObject {
+//        let fr=NSFetchRequest<T>(entityName: "\(childType)")
+//        fr.predicate=NSCompoundPredicate(andPredicateWithSubpredicates: [
+//            NSPredicate(format: "dbn=%@", school.dbn!)
+//        ])
+//
+//        return try ctx.fetch(fr)
+//    }
+//
+//    os_log(.debug,"Preparing to establish school relationships")
+//    do {
+//        try! ctx.fetch(schoolFR).forEach { school in
+//            childTypeAndHandlers.forEach { typeAndHandler in
+//                do {
+//                    let children=try fetchChildren(school: school, childType: typeAndHandler.0)
+//                    guard !children.isEmpty else {return}
+//
+//                    typeAndHandler.1(school,NSSet(array: children))
+//                } catch {
+//                    os_log(.error, "%@", error as NSError)
+//                }
+//            }
+//        }
+//        try ctx.save()
+//    } catch {
+//        os_log(.error, "%@", error as NSError)
+//        ctx.rollback()
+//        throw error
+//    }
+//    os_log(.debug,"Established school relationships")
+//}
+

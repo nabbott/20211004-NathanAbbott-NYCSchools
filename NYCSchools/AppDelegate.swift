@@ -76,7 +76,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 //FIXME: If the persistent container is loaded all core data ops will fail.
                 os_log(.error, "%@", "Unresolved error \(error), \(error.userInfo)")
             } else {
-                
                 container.performBackgroundTask { ctx in
                     do {
                         let count=try ctx.count(for:NSFetchRequest<HighSchool>(entityName: "HighSchool"))
@@ -89,7 +88,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                         
                         if 0==count || isUITest {
                             os_log(.debug,"Database is empty, loading in data from default files.")
-                            self.clearAndReloadData()
+//                            self.clearAndReloadData()
                         }
                     } catch {
                         os_log(.error, "%@", "\(error)")
@@ -129,42 +128,34 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         #endif
         
-        persistentContainer.performBackgroundTask { ctx in
-            //Note: The context did save notification is only sent because the updating
-            //of relationships occurs through the context instead of directly via the SQLite store.
-            //If the bg context doesn't have at least one save the notification won't fire and the
-            //main context won't see the changes and neither will the user.
-
+        let psc=self.persistentContainer.persistentStoreCoordinator
+        DispatchQueue.global(qos: .background).async {
+            os_log(.debug,"Starting the update routine")
             do {
-                //FIXME: Maybe wrap the delete and import routines in a transaction.
-                let importer=HSDataImporter(batchProcess: true)
-                try importer.deleteAllHSData(ctx: ctx, batch: true)
+                let tmpContainer=try importSchoolAndSATResults(schoolFile:assets.school, satFile:assets.sat)
+                guard let tmpCoordinator=tmpContainer?.persistentStoreCoordinator else {return}
+                guard let tmpStore=tmpCoordinator.persistentStores.first else {return}
                 
-                guard let schools=NSDataAsset(name: assets.school)?.data else {
-                    os_log(.debug, "%@", "Unable to load the hs data file")
-                    return
-                }
-                os_log(.debug,"Loading schools from: $@",assets.school)
-                
-                guard let satResults=NSDataAsset(name: assets.sat)?.data else {
-                    os_log(.debug, "%@", "Unable to load the sat results data file")
-                    return
-                }
-                os_log(.debug,"Loading sat from: $@",assets.sat)
-                
-                try importer.importAllDataAndEstablishRelationships(
-                    highSchools: schools,
-                    satResults: satResults,
-                    ctx: ctx)
-                
-                if ctx.hasChanges {
-                    try ctx.save()
+                let newURL=tmpStore.url!
+                //Depending on write ahead logging to protect from suddenly overwriting the working store
+                try updateExistingStoreWithNewStore(storeCoordinator: psc, oldURL: psc.persistentStores.first!.url!, newURL: newURL)
+                try removeTemporaryStore(tmpContainer: tmpContainer!)
+                DispatchQueue.main.async {
+                    self.persistentContainer.loadPersistentStores(completionHandler: { desc, err in
+                        if let e=err {
+                            os_log(.error,"%@",e as NSError)
+                        } else {
+                            os_log(.debug,"Reloaded stores")
+                            self.persistentContainer.viewContext.reset()
+                            self.isLoadingSchools=false
+                            os_log(.debug,"Completed the update routine")
+                            NotificationCenter.default.post(Notification(name: Notification.Name("DataUploadComplete"), object: self.persistentContainer))
+                        }
+                    })
                 }
             } catch {
-                os_log(.error,"%@",error as NSError)
+                os_log(.error, "%@",error as NSError)
             }
-            
-            self.isLoadingSchools=false
         }
     }
 }

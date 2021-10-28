@@ -64,12 +64,57 @@
         <attribute name="transfer" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="website" optional="YES" attributeType="String"/>
         <relationship name="address" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Address" inverseName="highSchool" inverseEntity="Address"/>
+        <relationship name="programs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Program" inverseName="highSchool" inverseEntity="Program"/>
         <relationship name="satResults" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="SATResult" inverseName="highSchool" inverseEntity="SATResult"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
                 <constraint value="dbn"/>
             </uniquenessConstraint>
         </uniquenessConstraints>
+    </entity>
+    <entity name="Program" representedClassName="Program" syncable="YES" codeGenerationType="class">
+        <attribute name="academicOpportunities" optional="YES" attributeType="String"/>
+        <attribute name="admissionsMethod" optional="YES" attributeType="String"/>
+        <attribute name="auditionInfo" optional="YES" attributeType="String"/>
+        <attribute name="auditionIsCommon" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="code" optional="YES" attributeType="String"/>
+        <attribute name="dbn" optional="YES" attributeType="String"/>
+        <attribute name="desc" optional="YES" attributeType="String"/>
+        <attribute name="directions" optional="YES" attributeType="String"/>
+        <attribute name="eligibility" optional="YES" attributeType="String"/>
+        <attribute name="grade9Applicants" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="grade9ApplicantsPerSeat" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="grade9Seats" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="grade9SeatsFilled" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="grade9SWDApplicants" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="grade9SWDApplicantsPerSeat" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="grade9SWDSeats" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="grade9SWDSeatsFilled" optional="YES" attributeType="Boolean" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="grade10Seats" optional="YES" attributeType="String"/>
+        <attribute name="interestArea" optional="YES" attributeType="String"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="offerRate" optional="YES" attributeType="String"/>
+        <attribute name="programNumber" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="specializedApplicants" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="specializedApplicantsPerSeat" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="specializedSeats" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="admissionPriority" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ProgramAdmissionsPriority" inverseName="program" inverseEntity="ProgramAdmissionsPriority"/>
+        <relationship name="admissionReqs" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ProgramAdmissionReqs" inverseName="program" inverseEntity="ProgramAdmissionReqs"/>
+        <relationship name="highSchool" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="HighSchool" inverseName="programs" inverseEntity="HighSchool"/>
+    </entity>
+    <entity name="ProgramAdmissionReqs" representedClassName="ProgramAdmissionReqs" syncable="YES" codeGenerationType="class">
+        <attribute name="dbn" optional="YES" attributeType="String"/>
+        <attribute name="programNo" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="requirement" optional="YES" attributeType="String"/>
+        <attribute name="requirementNo" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="program" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Program" inverseName="admissionReqs" inverseEntity="Program"/>
+    </entity>
+    <entity name="ProgramAdmissionsPriority" representedClassName="ProgramAdmissionsPriority" syncable="YES" codeGenerationType="class">
+        <attribute name="dbn" optional="YES" attributeType="String"/>
+        <attribute name="priority" optional="YES" attributeType="String"/>
+        <attribute name="priorityNo" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="programNo" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="program" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Program" inverseName="admissionPriority" inverseEntity="Program"/>
     </entity>
     <entity name="SATResult" representedClassName="SATResult" syncable="YES" codeGenerationType="class">
         <attribute name="dbn" optional="YES" attributeType="String"/>
@@ -82,7 +127,10 @@
     </entity>
     <elements>
         <element name="Address" positionX="-269.453125" positionY="-3394.34375" width="128" height="373"/>
-        <element name="HighSchool" positionX="-464.125" positionY="-3556.46875" width="128" height="643"/>
+        <element name="HighSchool" positionX="-464.125" positionY="-3556.46875" width="128" height="658"/>
+        <element name="Program" positionX="-288" positionY="-3528" width="128" height="463"/>
+        <element name="ProgramAdmissionReqs" positionX="-279" positionY="-3519" width="128" height="118"/>
+        <element name="ProgramAdmissionsPriority" positionX="-270" positionY="-3510" width="128" height="118"/>
         <element name="SATResult" positionX="-119.14453125" positionY="-3679.1328125" width="128" height="148"/>
     </elements>
 </model>

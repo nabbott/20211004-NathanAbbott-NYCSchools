@@ -91,11 +91,12 @@ class DirectoryViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+//        Do any additional setup after loading the view.
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(refreshDataAfterMOCUpdate(sender:)),
-                                               name: .NSManagedObjectContextDidMergeChangesObjectIDs,
-                                               object: (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext)
+                                               name: NSNotification.Name(rawValue: "DataUploadComplete"),
+                                               object: (UIApplication.shared.delegate as! AppDelegate).persistentContainer)
+        
         self.setupToolbar()
         loadDataAndRefreshTableView()
     }
@@ -260,6 +261,7 @@ class DirectoryViewController: UIViewController {
         //This is called via notifications that the managed object context has persisted changes
         //which may not occur on the main thread.
         DispatchQueue.main.async {
+            os_log(.debug,"Refreshing directory after reload")
             self.loadDataAndRefreshTableView()
             
             self.resetSearchViews()

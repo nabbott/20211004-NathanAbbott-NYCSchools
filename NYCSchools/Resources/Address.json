@@ -1,0 +1,25 @@
+[
+    ["bbl","bbl","string"],
+    ["bin","bin","string"],
+    ["dbn","dbn","string"],
+    ["zip","zip","string"],
+    ["bus","bus","string"],
+    ["nta","nta","string"],
+    ["boro","boro","string"],
+    ["city","city","string"],
+    ["subway","subway","string"],
+    ["borough","borough","string"],
+    ["location","location","string"],
+    ["state_code","stateCode","string"],
+    ["campus_name","campusName","string"],
+    ["neighborhood","neighborhood","string"],
+    ["building_code","buildingCode","string"],
+    ["primary_address_line_1","primaryAddressLine1","string"],
+    
+    ["latitude","latitude","double"],
+    ["longitude","longitude","double"],
+    
+    ["census_tract","censusTract","int"],
+    ["community_board","communityBoard","int"],
+    ["council_district","councilDistrict","int"],
+]
