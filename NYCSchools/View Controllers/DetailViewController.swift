@@ -12,6 +12,7 @@ import os
 
 class DetailViewController:UIViewController {
     var highschool:HighSchool?
+    lazy var orderedPrograms:[Program]? = {highschool?.programsByNumber}()
     
     @IBOutlet weak var name:UILabel!
     @IBOutlet weak var mathScores:UILabel!
@@ -123,3 +124,28 @@ class DetailViewController:UIViewController {
         }
     }
 }
+
+extension DetailViewController:UITableViewDataSource {
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return orderedPrograms?.count ?? 0
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell=tableView.dequeueReusableCell(withIdentifier: "program", for: indexPath)
+               
+        guard let prog=orderedPrograms?[indexPath.row] else {return cell}
+        
+        if #available(iOS 14, *) {
+            var config=cell.defaultContentConfiguration()
+            config.text=prog.name
+            cell.contentConfiguration=config
+        } else {
+            cell.textLabel!.text=prog.name
+        }
+        
+        return cell
+    }
+}
+
+extension DetailViewController:UITableViewDelegate {}
