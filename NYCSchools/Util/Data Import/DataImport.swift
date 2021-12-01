@@ -289,8 +289,8 @@ func persistTransformedData(transformed:[String:[[String:Any]]],ctx:NSManagedObj
 }
 
 
-//MARK: - Managed Object Routines
 
+//MARK: - Batch Delete
 /// Performs a batch delete of all instance of type identified by entity name in the supplied context.
 /// - Parameters:
 ///   - entityName: Name of the core data entity to be deleted, HighSchool for example.
@@ -311,6 +311,7 @@ func deleteAll(entityName:String, ctx:NSManagedObjectContext) throws {
     }
 }
 
+//MARK: - Persisting New Entities
 /// Writes the entities identified by entityName and defined in entityProperties to the store managed by the supplied managed object context.
 /// - Parameters:
 ///   - entityProperties: An array of dictionaries where the key is a field and the value is the field value.
@@ -389,12 +390,12 @@ func singlePersistNewEntities(entityProperties:Array<[String:Any]>, entityName:S
     }
 }
 
-
+//MARK: - Cleanup and Establishing Relationships
 /// Establishes the various parent/child relationships after the bulk insert.
 /// - Parameters:
 ///   - ctx: The managed object context
 ///   - parentType: The type of the parent as defined in the managed object model
-///   - fetchPredicate: The predicate that fetches each set of children
+///   - fetchPredicate: The predicate that fetches each set of children. Given a parent, this predicate should be able to retrive all of the parent's children.
 ///   - relHandlers: Each relationship belongs to a different field in the parent and may have a different cardinality (one-one,
 ///   one-many, etc.) this array of tuples allows for custom handlng per child. The first element in the tuple should be the class type of the child and the second
 ///   element should be a function that takes the parent and a set of [1..N] children and adds the children to the parent.
@@ -470,97 +471,4 @@ func establishSchoolRelationships(ctx:NSManagedObjectContext) throws {
     
     os_log(.debug,"Established school relationships")
 }
-
-//func establishProgramRelationships(ctx:NSManagedObjectContext) throws {
-//    print("Current thread: \(Thread.current.name ?? "NO NAME")")
-//
-//    let programFR=NSFetchRequest<Program>(entityName: "Program")
-//    programFR.sortDescriptors=[NSSortDescriptor(key: "dbn", ascending: true)]
-//    let childTypeAndHandlers:[(NSManagedObject.Type, (Program,NSSet)->())]=[
-//        (ProgramAdmissionsPriority.self, {(p,c) in
-//            p.addToAdmissionPriority(c)
-//        }),
-//        (ProgramAdmissionReqs.self, {(p,c) in p.addToAdmissionReqs(c)})
-//    ]
-//
-//    /// Fetches all programs children of a certain type based on the child's dbn and program number values.
-//    /// - Parameters:
-//    ///   - prog: The parent program
-//    ///   - childType: The class type fo the child entity
-//    /// - Returns: An arry of children of type childType
-//    func fetchChildren<T>(prog:Program, childType:T.Type) throws -> [T] where T:NSManagedObject {
-//        let fr=NSFetchRequest<T>(entityName: "\(childType)")
-//        fr.predicate=NSCompoundPredicate(andPredicateWithSubpredicates: [
-//            NSPredicate(format: "dbn=%@", prog.dbn!),
-//            NSPredicate(format: "programNo=%d", prog.programNumber)
-//        ])
-//        var children:[T]!
-//        children=try ctx.fetch(fr)
-//
-//        return children
-//    }
-//
-//    os_log(.debug,"Preparing to establish program relationships")
-//    do {
-//        try ctx.fetch(programFR).forEach { program in
-//            childTypeAndHandlers.forEach {typeAndHandler in
-//                do {
-//                    let children=try fetchChildren(prog: program, childType: typeAndHandler.0)
-//                    guard !children.isEmpty else {return}
-//
-//                    typeAndHandler.1(program,NSSet(array: children))
-//                } catch {
-//                    os_log(.error, "%@", error as NSError)
-//                }
-//            }
-//        }
-//
-//        try ctx.save()
-//    } catch {
-//        os_log(.error, "%@", error as NSError)
-//        ctx.rollback()
-//        throw error
-//    }
-//
-//    os_log(.debug,"Established program relationships")
-//}
-//func establishSchoolRelationships(ctx:NSManagedObjectContext) throws {
-//    let schoolFR=NSFetchRequest<HighSchool>(entityName: "HighSchool")
-//    let childTypeAndHandlers:[(NSManagedObject.Type, (HighSchool,NSSet)->())]=[
-//        (Address.self, { (p,c) in if let a=c.allObjects.first as? Address {p.address=a} }),
-//        (SATResult.self, {(p,c) in if let s=c.allObjects.first as? SATResult {p.satResults=s} }),
-//        (Program.self, { (p,c) in p.addToPrograms(c) })
-//    ]
-//
-//    func fetchChildren<T>(school:HighSchool, childType:T.Type) throws -> [T] where T:NSManagedObject {
-//        let fr=NSFetchRequest<T>(entityName: "\(childType)")
-//        fr.predicate=NSCompoundPredicate(andPredicateWithSubpredicates: [
-//            NSPredicate(format: "dbn=%@", school.dbn!)
-//        ])
-//
-//        return try ctx.fetch(fr)
-//    }
-//
-//    os_log(.debug,"Preparing to establish school relationships")
-//    do {
-//        try! ctx.fetch(schoolFR).forEach { school in
-//            childTypeAndHandlers.forEach { typeAndHandler in
-//                do {
-//                    let children=try fetchChildren(school: school, childType: typeAndHandler.0)
-//                    guard !children.isEmpty else {return}
-//
-//                    typeAndHandler.1(school,NSSet(array: children))
-//                } catch {
-//                    os_log(.error, "%@", error as NSError)
-//                }
-//            }
-//        }
-//        try ctx.save()
-//    } catch {
-//        os_log(.error, "%@", error as NSError)
-//        ctx.rollback()
-//        throw error
-//    }
-//    os_log(.debug,"Established school relationships")
-//}
 
